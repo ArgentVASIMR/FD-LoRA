@@ -1,7 +1,7 @@
 # https://github.com/kohya-ss/sd-scripts
 
 # Based on the powershell script in Raven's LoRA Training Rentry: https://rentry.org/59xed3
-# Last edited 7/07/2023
+# Last edited 7/7/23 (D/M/Y)
 
 # Don't be out of date! Ensure that you are using newer versions when possible.
 # Ask me for updated versions via Discord: argentvasimr
