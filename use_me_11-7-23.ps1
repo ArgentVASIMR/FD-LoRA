@@ -1,7 +1,7 @@
 # https://github.com/kohya-ss/sd-scripts
 
 # Based on the powershell script in Raven's LoRA Training Rentry: https://rentry.org/59xed3
-# Last edited 7/7/23 (D/M/Y)
+# Last edited 11/7/23 (D/M/Y)
 
 # Don't be out of date! Ensure that you are using newer versions when possible.
 # Ask me for updated versions via Discord: argentvasimr
@@ -66,6 +66,10 @@ if ($max_aspect -lt 1) {
 $max_bucket_res = [int]([Math]::Sqrt(([Math]::Pow($base_res,2) * $max_aspect)))
 $min_bucket_res = [int]([Math]::Sqrt(([Math]::Pow($base_res,2) / $max_aspect)))
 
+# Apply LR multiplier
+$unet_lr = $unet_lr*$lr_multiplier
+$text_enc_lr = $text_enc_lr*$lr_multiplier
+
 .\venv\scripts\activate
 
 accelerate launch --num_cpu_threads_per_process 8 train_network.py `
@@ -79,7 +83,7 @@ accelerate launch --num_cpu_threads_per_process 8 train_network.py `
     --save_model_as=safetensors `
     --train_data_dir="$image_dir" --output_dir="$unique_output" --reg_data_dir="$reg_dir" --pretrained_model_name_or_path="$model_dir\$model" `
     --output_name="$full_name"_ `
-    --learning_rate="$unet_lr" --unet_lr="$unet_lr"*"lr_multiplier" --text_encoder_lr="$text_enc_lr"*"lr_multiplier" `
+    --learning_rate="$unet_lr" --unet_lr="$unet_lr" --text_encoder_lr="$text_enc_lr" `
     --max_train_steps="$real_steps" --save_every_n_steps="$save_nth_step" `
     --resolution="$base_res" `
     --enable_bucket --min_bucket_reso="$min_bucket_res" --max_bucket_reso="$max_bucket_res" `
