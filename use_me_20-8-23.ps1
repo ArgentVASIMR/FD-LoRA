@@ -1,7 +1,7 @@
 # https://github.com/kohya-ss/sd-scripts
 
 # Based on the powershell script in Raven's LoRA Training Rentry: https://rentry.org/59xed3
-# Last edited 11/7/23 (D/M/Y)
+# Last edited 20/8/23 (D/M/Y)
 
 # Don't be out of date! Ensure that you are using newer versions when possible.
 # Ask me for updated versions via Discord: argentvasimr
@@ -36,12 +36,12 @@
 
     # Other Settings:
         $grad_acc_step = 1 # Accumulates <N> images into each gradient update. Can make training more reliable and successful, if used correctly.
-        $net_dim       = 128 # Network dimensions.
+        $net_dim       = 32 # Network dimensions.
         $net_alpha     = 0 # Network alpha.
         $optimizer     = "AdamW8bit" # Valid values: "AdamW", "AdamW8bit", "Lion", "SGDNesterov", "SDGNesterov8bit", "DAdaptation", "AdaFactor"
         $scheduler     = "cosine" # Valid values: "linear", "cosine", "cosine_with_restarts", "polynomial", "constant", "constant_with_warmup", "adafactor"
         $noise_offset  = 0.0 # Increases dynamic range of outputs. Every 0.1 dampens learning quite a bit, do more steps or higher training rates to compensate.
-        $keep_tags     = 0 # Keeps <N> tags at the front without shuffling them. 0 if no regularization, 1 with regularization, multi concepts may need > 1 
+        $keep_tags     = 0 # Keeps <N> tags at the front without shuffling them. 0 if no regularization, 1 with regularization, multi concepts may need > 1. Kohya's official name is "keep tokens".
 
 # ========================================================================================
 #    BEYOND THIS POINT IS STUFF YOU SHOULD NOT TOUCH UNLESS YOU KNOW WHAT YOU'RE DOING!
@@ -89,6 +89,8 @@ accelerate launch --num_cpu_threads_per_process 8 train_network.py `
     --enable_bucket --min_bucket_reso="$min_bucket_res" --max_bucket_reso="$max_bucket_res" `
     --train_batch_size="$batch_size" `
     --network_dim="$net_dim" --network_alpha="$net_alpha" `
+# For "Prodigy" optimiser:
+#    --optimizer_args "safeguard_warmup=True" "use_bias_correction=True" "weight_decay=0.01" `
     --optimizer_type="$optimizer" `
     --lr_scheduler="$scheduler" `
     --noise_offset="$noise_offset" `
@@ -98,7 +100,8 @@ accelerate launch --num_cpu_threads_per_process 8 train_network.py `
     --sample_prompts="$prompts" `
     --sample_sampler="k_euler_a" `
     --gradient_accumulation_steps="$grad_acc_step" `
-
+    --min_snr_gamma=5 `
+#    --v_parameterisation `
 pause
 
 # If you are using outdated torch, run this in a fresh powershell window (do not copy <##>):
