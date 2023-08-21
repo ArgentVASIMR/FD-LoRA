@@ -38,7 +38,7 @@
         $grad_acc_step = 1 # Accumulates <N> images into each gradient update. Can make training more reliable and successful, if used correctly.
         $net_dim       = 32 # Network dimensions.
         $net_alpha     = 0 # Network alpha.
-        $optimizer     = "AdamW8bit" # Valid values: "AdamW", "AdamW8bit", "Lion", "SGDNesterov", "SDGNesterov8bit", "DAdaptation", "AdaFactor"
+        $optimizer     = "AdamW8bit" # Valid values: "AdamW", "AdamW8bit", "Lion", "SGDNesterov", "SDGNesterov8bit", "DAdaptation", "AdaFactor", "Prodigy"
         $scheduler     = "cosine" # Valid values: "linear", "cosine", "cosine_with_restarts", "polynomial", "constant", "constant_with_warmup", "adafactor"
         $noise_offset  = 0.0 # Increases dynamic range of outputs. Every 0.1 dampens learning quite a bit, do more steps or higher training rates to compensate.
         $keep_tags     = 0 # Keeps <N> tags at the front without shuffling them. 0 if no regularization, 1 with regularization, multi concepts may need > 1. Kohya's official name is "keep tokens".
