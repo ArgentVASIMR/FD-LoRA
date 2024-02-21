@@ -1,0 +1,2 @@
+ringomogirebeam_, 21/02/2024
+i did a run with them off and one with scale norms 3 and net dropout off, usually scale norms didn't cause too many issues but network dropout 0.3 made it fairly lobotomized
