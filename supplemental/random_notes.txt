@@ -1,2 +1,5 @@
 ringomogirebeam_, 21/02/2024
 i did a run with [network dropout 0.3 and scale norms 0] and one with scale norms 3 and net dropout [0], usually scale norms didn't cause too many issues but network dropout 0.3 made it fairly lobotomized
+
+mmmmmmmm, 23/02/2024
+2000 [steps] is a good starting point for evaluation ofc but go in with no expectations
