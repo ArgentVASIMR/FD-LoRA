@@ -16,17 +16,17 @@
 # For assistance, please ask in the LoRA training thread on Furry Diffusion: https://discord.com/channels/1019133813105905664/1065749961083469884
 
 # Directories:
-$dataset_dir = ".\.dataset"
-$output_dir = ".\.output"
-$reg_dir = ".\.reg"
-$checkpoint_dir = "C:\your\models\folder\here"
-$prompts = ""; # Leave blank if you don't want sample images
+    $dataset_dir = ".\.dataset"
+    $output_dir = ".\.output"
+    $reg_dir = ".\.reg"
+    $checkpoint_dir = "C:\your\models\folder\here"
+    $prompts = ""; # Leave blank if you don't want sample images
 
 # Model Settings:
-$checkpoint     = "v1-5-pruned-emaonly.safetensors"
-$clip_skip      = 1
-$v_prediction   = $false
-$sdxl           = $false
+    $checkpoint     = "v1-5-pruned-emaonly.safetensors"
+    $clip_skip      = 1
+    $v_prediction   = $false
+    $sdxl           = $false
 
 # Training Config:
 # Basic Settings:
