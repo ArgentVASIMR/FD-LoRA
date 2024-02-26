@@ -16,16 +16,10 @@
 # For assistance, please ask in the LoRA training thread on Furry Diffusion: https://discord.com/channels/1019133813105905664/1065749961083469884
 
 # Directories:
-    # $dataset_dir = ".\.dataset"
-    # $output_dir = ".\.output"
-    # $reg_dir = ".\.reg"
-    # $checkpoint_dir = "C:\your\models\folder\here"
-    # $prompts = ""; # Leave blank if you don't want sample images
-
-    $dataset_dir = "C:\lora-training\dataset"
-    $output_dir = "C:\lora-training\output"
-    $reg_dir = "C:\lora-training\reg"
-    $checkpoint_dir = "C:\ComfyUI\new_ComfyUI_windows_portable_nvidia_cu121_or_cpu\ComfyUI\ComfyUI\models\checkpoints"
+    $dataset_dir = ".\.dataset"
+    $output_dir = ".\.output"
+    $reg_dir = ".\.reg"
+    $checkpoint_dir = "C:\your\models\folder\here"
     $prompts = ""; # Leave blank if you don't want sample images
 
 # Model Settings:
