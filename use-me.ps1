@@ -38,7 +38,7 @@
     # Dataset Treatment:
         $base_res       = 512
         $max_aspect     = 1.5
-        $bucket_step    = 8
+        $bucket_step    = 32 # Must be multiple of 32
         $flip_aug       = $true
         $keep_tags      = 1
 
