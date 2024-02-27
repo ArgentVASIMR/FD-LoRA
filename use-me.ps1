@@ -18,7 +18,7 @@
 # Directories:
     $dataset_dir = ".\.dataset"
     $output_dir = ".\.output"
-    $reg_dir = ".\.reg"
+    $prior_preserve = ".\.prior_pres"
     $checkpoint_dir = "C:\your\models\folder\here"
     $prompts = ""; # Leave blank if you don't want sample images
 
@@ -218,7 +218,7 @@ accelerate launch --num_cpu_threads_per_process 8 $run_script `
     --prior_loss_weight=1 `
     --mixed_precision="fp16" --save_precision="fp16" `
     --xformers --cache_latents --save_model_as=safetensors `
-    --train_data_dir="$dataset_dir" --output_dir="$unique_output" --reg_data_dir="$reg_dir" --pretrained_model_name_or_path="$checkpoint_dir_full" `
+    --train_data_dir="$dataset_dir" --output_dir="$unique_output" --reg_data_dir="$prior_preserve" --pretrained_model_name_or_path="$checkpoint_dir_full" `
     --output_name="$full_name" `
     --unet_lr="$unet_lr" --text_encoder_lr="$text_enc_lr" `
     --resolution="$base_res" --enable_bucket --min_bucket_reso="$min_bucket_res" --max_bucket_reso="$max_bucket_res" --bucket_reso_steps="$bucket_step" `
