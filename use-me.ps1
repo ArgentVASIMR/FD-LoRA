@@ -25,7 +25,7 @@
 # Model Settings:
     $checkpoint     = "v1-5-pruned-emaonly.safetensors"
     $clip_skip      = 1
-    $v_prediction   = $false
+    $v_prediction   = $true
     $sdxl           = $false
 
 # Training Config:
@@ -57,7 +57,7 @@
     # Network:
         $net_dim        = 32
         $net_alpha      = 32
-        $optimiser      = "adamw" # Recommended options are "adamw", "adamw8bit", "dadaptadam".
+        $optimiser      = "prodigy" # Recommended options are "adamw", "adamw8bit", "dadaptadam".
 
     # Performance:
         $grad_checkpt   = $false
@@ -82,7 +82,7 @@
         $seed           = 0
         $cap_dropout    = 0
         $net_dropout    = 0.1
-        $scale_weight   = 1
+        $scale_weight   = 0
 
 # Declaring/setting variables for later
     $run_script = "train_network.py"
