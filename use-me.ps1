@@ -83,6 +83,7 @@
         $cap_dropout    = 0
         $net_dropout    = 0.1
         $scale_weight   = 0
+        $d_coef         = 1.0
 
 # Declaring/setting variables for later
     $run_script = "train_network.py"
@@ -188,7 +189,7 @@
         $opt_args += "decouple=True","use_bias_correction=True"
         $extra += "--max_grad_norm=0"
         if ($optimizer -eq "prodigy") {
-            $opt_args += "d_coef=1.0"
+            $opt_args += "d_coef=$d_coef"
         }
     }
     $opt_args += "betas=0.9,0.99","weight_decay=$weight_decay"
