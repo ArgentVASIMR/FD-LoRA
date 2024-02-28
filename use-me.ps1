@@ -179,16 +179,18 @@
         $unet_lr *= $total_grad_acc
         $text_enc_lr *= $total_grad_acc
     }
-    if (($optimizer -eq "prodigy") -or ($optimizer -eq "dadaptadam")) {
+    if (($optimiser -eq "prodigy") -or ($optimiser -eq "dadaptadam") -or ($optimiser -eq "dadaptation")) {
         $is_lr_free = $true
+        Write-Host "Optimiser is LR free"
     }
     if ($is_lr_free -eq $true) {
+        Write-Host "Setting LRs..."
         $unet_lr = 1
         $text_enc_lr = 1
         $weight_decay = 0.0
         $opt_args += "decouple=True","use_bias_correction=True"
         $extra += "--max_grad_norm=0"
-        if ($optimizer -eq "prodigy") {
+        if ($optimiser -eq "prodigy") {
             $opt_args += "d_coef=$d_coef"
         }
     }
