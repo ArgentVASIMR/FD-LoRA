@@ -113,6 +113,16 @@
     }
 
 # Dataset Treatment
+    if ($base_res -lt 512){
+        Write-Host "WARNING: Your base resolution is set to less than 512 pixels, which is lower than what SD 1.5 is trained at." -ForegroundColor Yellow
+        Write-Host "If this is intentional, then proceed by pressing enter. Otherwise, close this window to fix your settings." -ForegroundColor Yellow
+        pause
+    } elseif (($base_res -lt 1024) -and ($sdxl -eq $true)){
+        Write-Host "WARNING: Your base resolution is set to less than 1024 pixels, which is lower than what SDXL is trained at." -ForegroundColor Yellow
+        Write-Host "If this is intentional, then proceed by pressing enter. Otherwise, close this window to fix your settings." -ForegroundColor Yellow
+        pause
+    }
+
     # Bucketing res calculations via $max_aspect [1]
     if ($max_aspect -lt 1) {$max_aspect = 1/$max_aspect} # Flip aspect ratio if it's less than 1
     $max_bucket_res = [int]([Math]::Ceiling([Math]::Sqrt(($base_res * $base_res * $max_aspect)) / 64) * 64)
