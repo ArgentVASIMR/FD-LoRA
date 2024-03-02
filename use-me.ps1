@@ -8,7 +8,10 @@
     # argentvasimr
     # feffy
     # mmmmmmmm
-# Last edited 28-02-2024 (argentvasimr)
+# Last edited 2-03-2024 (argentvasimr)
+
+# IF THE DATE ABOVE IS OLDER THAN A MONTH, PLEASE CHECK THE REPO FOR LATEST: https://github.com/ArgentVASIMR/FD-lora
+
 # To implement:
     # Space-tolerant directories
     # Fix unicode issue (if fixable)
@@ -18,14 +21,14 @@
 # Directories:
     $dataset_dir = ".\.dataset"
     $output_dir = ".\.output"
-    $prior_preserve = ".\.prior_pres"
-    $checkpoint_dir = "C:\your\models\folder\here"
+    $prior_pres = ".\.prior_pres"
+    $base_model_dir = "C:\your\models\folder\here"
     $prompts = ""; # Leave blank if you don't want sample images
 
-# Model Settings:
-    $checkpoint     = "v1-5-pruned-emaonly.safetensors"
+# Base Model Config:
+    $base_model     = "v1-5-pruned-emaonly.safetensors"
     $clip_skip      = 1
-    $v_prediction   = $true
+    $v_prediction   = $false
     $sdxl           = $false
 
 # Training Config:
@@ -33,12 +36,12 @@
         $lora_name      = "myFirstLoRA"
         $version        = "prototype"
         $comment        = "This is my first LoRA"
-        $save_amount    = 10
+        $save_amount    = 10 # 0 to disable
 
     # Dataset Treatment:
         $base_res       = 512
-        $max_aspect     = 1.5
-        $bucket_step    = 32 # Must be multiple of 32
+        $max_aspect     = 2
+        $bucket_step    = 64
         $flip_aug       = $true
         $keep_tags      = 1
 
@@ -46,18 +49,20 @@
         $total_steps    = 2000
         $batch_size     = 1
         $grad_acc_step  = 1
-        $warmup         = 200 # If $warmup_type is "percent", must be less than 1.0, otherwise it is step count
-        $warmup_type    = "steps" # "steps", "steps_batch", "percent"
+        $warmup         = 0.1 # 0 to disable
+        $warmup_type    = "percent" # "percent", "steps", "steps_batch"
 
     # Learning Rate:
         $unet_lr        = 1e-4
         $text_enc_lr    = 5e-5
+        $scale_lr_batch = $true # Scale learning rate by batch size.
         $lr_scheduler   = "cosine" # Recommended options are "cosine", "linear".
+        $optimiser      = "adamw" # Recommended options are "adamw", "adamw8bit", "dadaptadam".
 
     # Network:
         $net_dim        = 32
         $net_alpha      = 32
-        $optimiser      = "prodigy" # Recommended options are "adamw", "adamw8bit", "dadaptadam".
+        $correct_alpha  = $false # Apply scaling to alpha, multiplying by sqrt($net_dim)
 
     # Performance:
         $grad_checkpt   = $false
@@ -72,9 +77,7 @@
 # =============================================================================================
 
     # Debugging:
-        $correct_alpha  = $false # Apply scaling to alpha, multiplying by sqrt($net_dim)
-        $scale_lr       = $true # Scale learning rate by batch size.
-        $is_lr_free     = $false # Manual toggle for LR-free optimisers, in case one isn't accounted for.
+        $is_lr_free     = $false
 
     # Advanced:
     # (MAY BE REMOVED FROM CONFIG OUTRIGHT IN FUTURE IF NO ADDITIONAL CHANGES ARE RECOMMENDED)
@@ -96,7 +99,7 @@
     }
 
 # Model Settings
-    $checkpoint_dir_full = "$checkpoint_dir\$checkpoint"
+    $base_model_dir_full = "$base_model_dir\$base_model"
     if ($v_prediction -eq $true) {
         $extra += "--v_parameterization","--zero_terminal_snr"
         $noise_offset = 0.0
@@ -123,8 +126,20 @@
         pause
     }
 
+    if (($bucket_step/8) -isnot [int]){
+        Write-Host "ERROR: `$bucket_step must be a multiple of 8 when using SD 1.5 models or similar." -ForegroundColor Red
+        pause
+        exit
+    } elseif ((($bucket_step/32) -isnot [int]) -and ($sdxl -eq $true)){
+        Write-Host "ERROR: `$bucket_step must be a multiple of 32 when using SDXL models." -ForegroundColor Red
+        pause
+        exit
+    }
+
     # Bucketing res calculations via $max_aspect [1]
-    if ($max_aspect -lt 1) {$max_aspect = 1/$max_aspect} # Flip aspect ratio if it's less than 1
+    if ($max_aspect -lt 1) {
+        $max_aspect = 1/$max_aspect # Flip aspect ratio if it's less than 1
+    }
     $max_bucket_res = [int]([Math]::Ceiling([Math]::Sqrt(($base_res * $base_res * $max_aspect)) / 64) * 64)
     $min_bucket_res = [int]([Math]::Floor([Math]::Sqrt(($base_res * $base_res / $max_aspect)) / 64) * 64)
 
@@ -135,7 +150,10 @@
 # Steps
     $total_grad_acc = $batch_size*$grad_acc_step
     $total_steps = [int]([Math]::Round($total_steps / $total_grad_acc))
-    $save_nth_step = [int]([Math]::Round($total_steps / $save_amount))
+    if ($save_amount -gt 0){
+        $save_nth_step = [int]([Math]::Round($total_steps / $save_amount))
+        $extra += "--save_every_n_steps=$save_nth_step"
+    }
 
     # Check if warmup is set to a valid value with the warmup type
     if (($warmup -ge 1) -and ($warmup_type -eq "percent")) {
@@ -185,19 +203,16 @@
     if ($correct_alpha -eq $true) {
         $net_alpha *= [Math]::Sqrt($net_dim)
     }
-    if ($scale_lr -eq $true) {
+    if ($scale_lr_batch -eq $true) {
         $unet_lr *= $total_grad_acc
         $text_enc_lr *= $total_grad_acc
     }
     if (($optimiser -eq "prodigy") -or ($optimiser -eq "dadaptadam") -or ($optimiser -eq "dadaptation")) {
         $is_lr_free = $true
-        Write-Host "Optimiser is LR free"
     }
     if ($is_lr_free -eq $true) {
-        Write-Host "Setting LRs..."
         $unet_lr = 1
         $text_enc_lr = 1
-        $weight_decay = 0.0
         $opt_args += "decouple=True","use_bias_correction=True"
         $extra += "--max_grad_norm=0"
         if ($optimiser -eq "prodigy") {
@@ -231,7 +246,7 @@ accelerate launch --num_cpu_threads_per_process 8 $run_script `
     --prior_loss_weight=1 `
     --mixed_precision="fp16" --save_precision="fp16" `
     --xformers --cache_latents --save_model_as=safetensors `
-    --train_data_dir="$dataset_dir" --output_dir="$unique_output" --reg_data_dir="$prior_preserve" --pretrained_model_name_or_path="$checkpoint_dir_full" `
+    --train_data_dir="$dataset_dir" --output_dir="$unique_output" --reg_data_dir="$prior_pres" --pretrained_model_name_or_path="$base_model_dir_full" `
     --output_name="$full_name" `
     --unet_lr="$unet_lr" --text_encoder_lr="$text_enc_lr" `
     --resolution="$base_res" --enable_bucket --min_bucket_reso="$min_bucket_res" --max_bucket_reso="$max_bucket_res" --bucket_reso_steps="$bucket_step" `
@@ -240,7 +255,7 @@ accelerate launch --num_cpu_threads_per_process 8 $run_script `
     --noise_offset="$noise_offset" `
     --seed="$seed" `
     --clip_skip="$clip_skip" `
-    --max_train_steps="$total_steps" --save_every_n_steps="$save_nth_step" `
+    --max_train_steps="$total_steps" `
     --min_snr_gamma=5 `
     --optimizer_args $opt_args `
     $extra `
