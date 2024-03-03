@@ -57,11 +57,11 @@
         $text_enc_lr    = 5e-5
         $scale_lr_batch = $true # Scale learning rate by batch size.
         $lr_scheduler   = "cosine" # Recommended options are "cosine", "linear".
-        $optimiser      = "adamw" # Recommended options are "adamw", "adamw8bit", "dadaptadam".
 
     # Network:
         $net_dim        = 32
         $net_alpha      = 32
+        $optimiser      = "adamw" # Recommended options are "adamw", "adamw8bit", "dadaptadam".
         $correct_alpha  = $false # Apply scaling to alpha, multiplying by sqrt($net_dim)
 
     # Performance:
