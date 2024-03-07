@@ -8,7 +8,7 @@
     # argentvasimr
     # feffy
     # mmmmmmmm
-# Last edited 2-03-2024 (argentvasimr)
+# Last edited 7-03-2024 (argentvasimr)
 
 # IF THE DATE ABOVE IS OLDER THAN A MONTH, PLEASE CHECK THE REPO FOR LATEST: https://github.com/ArgentVASIMR/FD-lora
 
@@ -21,7 +21,7 @@
 # Directories:
     $dataset_dir = ".\.dataset"
     $output_dir = ".\.output"
-    $prior_pres = ".\.prior_pres"
+    $class_dir = ".\.class_img"
     $base_model_dir = "C:\your\models\folder\here"
     $prompts = ""; # Leave blank if you don't want sample images
 
@@ -40,17 +40,16 @@
 
     # Dataset Treatment:
         $base_res       = 512
-        $max_aspect     = 2
         $bucket_step    = 64
         $flip_aug       = $true
         $keep_tags      = 1
 
     # Steps:
-        $total_steps    = 2000
+        $base_steps     = 2000
         $batch_size     = 1
         $grad_acc_step  = 1
-        $warmup         = 0.1 # 0 to disable
-        $warmup_type    = "percent" # "percent", "steps", "steps_batch"
+        $warmup         = 1.0 # 0 (or less) to disable
+        $warmup_type    = "steps" # "percent", "steps", "steps_batch"
 
     # Learning Rate:
         $unet_lr        = 1e-4
@@ -77,7 +76,9 @@
 # =============================================================================================
 
     # Debugging:
+        $warnings       = $true
         $is_lr_free     = $false
+        $max_aspect     = 2
 
     # Advanced:
     # (MAY BE REMOVED FROM CONFIG OUTRIGHT IN FUTURE IF NO ADDITIONAL CHANGES ARE RECOMMENDED)
@@ -95,13 +96,17 @@
 
 # Directories
     if ($prompts -ne "") {
-        $extra += "--sample_prompts=$prompts","--sample_sampler=euler","--sample_every_n_steps=$save_nth_step"
+        $extra += "--sample_prompts=$prompts", "--sample_sampler=euler", "--sample_every_n_steps=$save_nth_step"
     }
+
+    $full_name =  $lora_name + "_" + $version
+    [String]$unique_output = "$output_dir\$full_name"
 
 # Model Settings
     $base_model_dir_full = "$base_model_dir\$base_model"
+    
     if ($v_prediction -eq $true) {
-        $extra += "--v_parameterization","--zero_terminal_snr"
+        $extra += "--v_parameterization", "--zero_terminal_snr"
         $noise_offset = 0.0
     } else {
         $noise_offset = 0.01
@@ -115,33 +120,33 @@
         $extra += "--training_comment=$comment"
     }
 
+
+$generic_warning = "If you do not want warnings, set `$warnings to false."
+
 # Dataset Treatment
-    if ($base_res -lt 512){
+    if (($base_res -lt 512) -and ($warnings -eq $true)){
         Write-Host "WARNING: Your base resolution is set to less than 512 pixels, which is lower than what SD 1.5 is trained at." -ForegroundColor Yellow
         Write-Host "If this is intentional, then proceed by pressing enter. Otherwise, close this window to fix your settings." -ForegroundColor Yellow
+        Write-Host "$generic_warning" -ForegroundColor Magenta
         pause
-    } elseif (($base_res -lt 1024) -and ($sdxl -eq $true)){
+    } elseif (($base_res -lt 1024) -and ($sdxl -eq $true) -and ($warnings -eq $true)){
         Write-Host "WARNING: Your base resolution is set to less than 1024 pixels, which is lower than what SDXL is trained at." -ForegroundColor Yellow
         Write-Host "If this is intentional, then proceed by pressing enter. Otherwise, close this window to fix your settings." -ForegroundColor Yellow
+        Write-Host "$generic_warning" -ForegroundColor Magenta
         pause
     }
 
-    if (($bucket_step/8) -isnot [int]){
+    if ((($bucket_step/8) -isnot [int]) -and ($warnings -eq $true)){
         Write-Host "ERROR: `$bucket_step must be a multiple of 8 when using SD 1.5 models or similar." -ForegroundColor Red
+        Write-Host "$generic_warning" -ForegroundColor Magenta
         pause
         exit
-    } elseif ((($bucket_step/32) -isnot [int]) -and ($sdxl -eq $true)){
+    } elseif ((($bucket_step/32) -isnot [int]) -and ($sdxl -eq $true)  -and ($warnings -eq $true)){
         Write-Host "ERROR: `$bucket_step must be a multiple of 32 when using SDXL models." -ForegroundColor Red
+        Write-Host "$generic_warning" -ForegroundColor Magenta
         pause
         exit
     }
-
-    # Bucketing res calculations via $max_aspect [1]
-    if ($max_aspect -lt 1) {
-        $max_aspect = 1/$max_aspect # Flip aspect ratio if it's less than 1
-    }
-    $max_bucket_res = [int]([Math]::Ceiling([Math]::Sqrt(($base_res * $base_res * $max_aspect)) / 64) * 64)
-    $min_bucket_res = [int]([Math]::Floor([Math]::Sqrt(($base_res * $base_res / $max_aspect)) / 64) * 64)
 
     if ($flip_aug -eq $true) {
         $extra += "--flip_aug"
@@ -149,38 +154,50 @@
 
 # Steps
     $total_grad_acc = $batch_size*$grad_acc_step
-    $total_steps = [int]([Math]::Round($total_steps / $total_grad_acc))
+    $base_steps = [int]([Math]::Round($base_steps / $total_grad_acc))
     if ($save_amount -gt 0){
-        $save_nth_step = [int]([Math]::Round($total_steps / $save_amount))
+        $save_nth_step = [int]([Math]::Round($base_steps / $save_amount))
         $extra += "--save_every_n_steps=$save_nth_step"
     }
 
-    # Check if warmup is set to a valid value with the warmup type
-    if (($warmup -ge 1) -and ($warmup_type -eq "percent")) {
-        Write-Color "The warmup percentage is set to equal to or greater than 1.0 / 100% ($warmup)." -ForegroundColor Red
-        Write-Host "Please set `$warmup to less than 1 (recommended value is 0.1 / 10%), OR set `$warmup_type to `"steps`" or `"steps_batch`"." -ForegroundColor Red
+# Check if warmup is set to a valid value with the warmup type
+    if (($warmup -ge 1) -and ($warmup_type -eq "percent") -and ($warnings -eq $true)) {
+        Write-Host "ERROR: The warmup percentage is set to equal to or greater than 1.0 ($warmup)." -ForegroundColor Red
+        Write-Host "Please set `$warmup to less than 1 (recommended value is 0.1), OR set `$warmup_type to `"steps`" or `"steps_batch`"." -ForegroundColor Red
+        Write-Host "$generic_warning" -ForegroundColor Magenta
         pause
         exit
-    } elseif (($warmup -lt 1) -and ($warmup_type -ne "percent")) {
-        Write-Host "The warmup steps are less than 1 ($warmup)." -ForegroundColor Red
+    } elseif (($warmup -lt 1) -and ($warmup_type -ne "percent") -and ($warnings -eq $true)) {
+        Write-Host "ERROR: The warmup steps are less than 1 ($warmup)." -ForegroundColor Red
         Write-Host "Please set `$warmup to an integer greater than 1 (recommended value is 200), OR set `$warmup_type to `"percent`"." -ForegroundColor Red
+        Write-Host "$generic_warning" -ForegroundColor Magenta
         pause
         exit
-    } elseif (($warmup -isnot [int]) -and ($warmup_type -ne "percent")) {
-        Write-Host "The inputted warmup steps is not an integer." -ForegroundColor Red
+    } elseif (($warmup -isnot [int]) -and ($warmup_type -ne "percent") -and ($warnings -eq $true)) {
+        Write-Host "ERROR: The inputted warmup steps is a decimal and not an integer." -ForegroundColor Red
         Write-Host "Please set an integer value for `$warmup or set `$warmup_type to `"percent`"." -ForegroundColor Red
+        Write-Host "$generic_warning" -ForegroundColor Magenta
         pause
         exit
     }
 
     if (($warmup_type -eq "percent") -or ($warmup_type -eq "steps_batch")){
-        $warmup_steps = [int]([Math]::Round(($total_steps*$warmup)))
+        $warmup_steps = [int]([Math]::Round(($base_steps*$warmup)))
     } elseif ($warmup_type -eq "steps") {
         $warmup_steps = $warmup
+    }
+    if ($warmup_steps -gt $base_steps) {
+        Write-Host "ERROR: Warmup steps cannot be greater than your base steps." -ForegroundColor Red
+        Write-Host "Please ensure `$warmup is set to a number less than your base steps." -ForegroundColor Red
+        Write-Host "$generic_warning" -ForegroundColor Magenta
+        pause
+        exit
     }
     if ($warmup -gt 0) {
         $extra += "--lr_warmup_steps=$warmup_steps"
     }
+
+    Write-Host "Past!"
 
 # Network
     $lr_scheduler = $lr_scheduler.ToLower()
@@ -219,7 +236,14 @@
             $opt_args += "d_coef=$d_coef"
         }
     }
-    $opt_args += "betas=0.9,0.99","weight_decay=$weight_decay"
+    $opt_args += "betas=0.9,0.99", "weight_decay=$weight_decay"
+
+    # Bucketing res calculations via $max_aspect [1]
+    if ($max_aspect -lt 1) {
+        $max_aspect = 1/$max_aspect # Flip aspect ratio if it's less than 1
+    }
+    $max_bucket_res = [int]([Math]::Ceiling([Math]::Sqrt(($base_res * $base_res * $max_aspect)) / 64) * 64)
+    $min_bucket_res = [int]([Math]::Floor([Math]::Sqrt(($base_res * $base_res / $max_aspect)) / 64) * 64)
 
 # Advanced
     if ($cap_dropout -gt 0) {
@@ -232,10 +256,6 @@
         $extra += "--scale_weight_norms=$scale_weight"
     }
 
-# Additional lines to automatically generate named folders:
-$full_name =  $lora_name + "_" + $version
-[String]$unique_output = "$output_dir\$full_name"
-
 .\venv\scripts\activate
 
 accelerate launch --num_cpu_threads_per_process 8 $run_script `
@@ -246,7 +266,7 @@ accelerate launch --num_cpu_threads_per_process 8 $run_script `
     --prior_loss_weight=1 `
     --mixed_precision="fp16" --save_precision="fp16" `
     --xformers --cache_latents --save_model_as=safetensors `
-    --train_data_dir="$dataset_dir" --output_dir="$unique_output" --reg_data_dir="$prior_pres" --pretrained_model_name_or_path="$base_model_dir_full" `
+    --train_data_dir="$dataset_dir" --output_dir="$unique_output" --reg_data_dir="$class_dir" --pretrained_model_name_or_path="$base_model_dir_full" `
     --output_name="$full_name" `
     --unet_lr="$unet_lr" --text_encoder_lr="$text_enc_lr" `
     --resolution="$base_res" --enable_bucket --min_bucket_reso="$min_bucket_res" --max_bucket_reso="$max_bucket_res" --bucket_reso_steps="$bucket_step" `
@@ -255,7 +275,7 @@ accelerate launch --num_cpu_threads_per_process 8 $run_script `
     --noise_offset="$noise_offset" `
     --seed="$seed" `
     --clip_skip="$clip_skip" `
-    --max_train_steps="$total_steps" `
+    --max_train_steps="$base_steps" `
     --min_snr_gamma=5 `
     --optimizer_args $opt_args `
     $extra `
