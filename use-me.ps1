@@ -48,8 +48,8 @@
         $base_steps     = 2000
         $batch_size     = 1
         $grad_acc_step  = 1
-        $warmup         = 1.0 # 0 (or less) to disable
-        $warmup_type    = "steps" # "percent", "steps", "steps_batch"
+        $warmup         = 0.1 # 0 (or less) to disable
+        $warmup_type    = "percent" # "percent", "steps", "steps_batch"
 
     # Learning Rate:
         $unet_lr        = 1e-4
@@ -58,8 +58,8 @@
         $lr_scheduler   = "cosine" # Recommended options are "cosine", "linear".
 
     # Network:
-        $net_dim        = 32
-        $net_alpha      = 32
+        $net_dim        = 16
+        $net_alpha      = 16
         $optimiser      = "adamw" # Recommended options are "adamw", "adamw8bit", "dadaptadam".
         $correct_alpha  = $false # Apply scaling to alpha, multiplying by sqrt($net_dim)
 
