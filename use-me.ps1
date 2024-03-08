@@ -8,7 +8,7 @@
     # argentvasimr
     # feffy
     # mmmmmmmm
-# Last edited 7-03-2024 (argentvasimr)
+# Last edited 8-03-2024 (argentvasimr)
 
 # IF THE DATE ABOVE IS OLDER THAN A MONTH, PLEASE CHECK THE REPO FOR LATEST: https://github.com/ArgentVASIMR/FD-lora
 
