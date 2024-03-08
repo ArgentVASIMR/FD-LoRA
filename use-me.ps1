@@ -65,7 +65,7 @@
 
     # Performance:
         $grad_checkpt   = $false
-        $full_fp16      = $false
+        $full_bf16      = $false
         $fp8_base       = $false
         $latents_disk   = $false
 
@@ -203,8 +203,11 @@ $generic_warning = "If you do not want warnings, set `$warnings to false."
     $lr_scheduler = $lr_scheduler.ToLower()
 
 # Performance
-    if ($full_fp16 -eq $true) {
-        $extra += "--full_fp16"
+    if ($full_bf16 -eq $true) {
+        $extra += "--full_fb16"
+        $precision = "bf16"
+    } else {
+        $precision = "fp16"
     }
     if ($grad_checkpt -eq $true) {
         $extra += "--gradient_checkpointing"
@@ -264,7 +267,7 @@ accelerate launch --num_cpu_threads_per_process 8 $run_script `
     --max_data_loader_n_workers=1 --persistent_data_loader_workers `
     --caption_extension=".txt" --shuffle_caption --keep_tokens="$keep_tags" --max_token_length=225 `
     --prior_loss_weight=1 `
-    --mixed_precision="fp16" --save_precision="fp16" `
+    --mixed_precision="$precision" --save_precision="$precision" `
     --xformers --cache_latents --save_model_as=safetensors `
     --train_data_dir="$dataset_dir" --output_dir="$unique_output" --reg_data_dir="$class_dir" --pretrained_model_name_or_path="$base_model_dir_full" `
     --output_name="$full_name" `
