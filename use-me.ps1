@@ -204,7 +204,7 @@ $generic_warning = "If you do not want warnings, set `$warnings to false."
 
 # Performance
     if ($full_bf16 -eq $true) {
-        $extra += "--full_fb16"
+        $extra += "--full_bf16"
         $precision = "bf16"
     } else {
         $precision = "fp16"
