@@ -48,7 +48,7 @@
         $base_steps     = 2000
         $batch_size     = 1
         $grad_acc_step  = 1
-        $warmup         = 0.1 # 0 (or less) to disable
+        $warmup         = 0.1 # 0 to disable
         $warmup_type    = "percent" # "percent", "steps", "steps_batch"
 
     # Learning Rate:
@@ -65,7 +65,7 @@
 
     # Performance:
         $grad_checkpt   = $false
-        $full_bf16      = $false
+        $full_precision = $false
         $fp8_base       = $false
         $latents_disk   = $false
 
@@ -79,12 +79,13 @@
         $warnings       = $true
         $is_lr_free     = $false
         $max_aspect     = 2
+        $precision      = "fp16"
 
     # Advanced:
     # (MAY BE REMOVED FROM CONFIG OUTRIGHT IN FUTURE IF NO ADDITIONAL CHANGES ARE RECOMMENDED)
         $weight_decay   = 0.01
         $seed           = 0
-        $cap_dropout    = 0
+        $cap_dropout    = 0.01
         $net_dropout    = 0.1
         $scale_weight   = 0
         $d_coef         = 1.0
@@ -203,14 +204,14 @@ $generic_warning = "If you do not want warnings, set `$warnings to false."
     $lr_scheduler = $lr_scheduler.ToLower()
 
 # Performance
-    if ($full_bf16 -eq $true) {
-        $extra += "--full_bf16"
-        $precision = "bf16"
-    } else {
-        $precision = "fp16"
-    }
     if ($grad_checkpt -eq $true) {
         $extra += "--gradient_checkpointing"
+    }
+    if (($full_precision -eq $true) -and ($precision = "fp16")) {
+        $extra += "--full_fp16"
+    }
+    if (($full_precision -eq $true) -and ($precision = "bf16")) {
+        $extra += "--full_bf16"
     }
     if ($fp8_base -eq $true) {
         $extra += "--fp8_base"
