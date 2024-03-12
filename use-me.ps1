@@ -85,7 +85,7 @@
     # (MAY BE REMOVED FROM CONFIG OUTRIGHT IN FUTURE IF NO ADDITIONAL CHANGES ARE RECOMMENDED)
         $weight_decay   = 0.01
         $seed           = 0
-        $cap_dropout    = 0.01
+        $cap_dropout    = 0.0
         $net_dropout    = 0.1
         $scale_weight   = 0
         $d_coef         = 1.0
@@ -251,7 +251,7 @@ $generic_warning = "If you do not want warnings, set `$warnings to false."
 
 # Advanced
     if ($cap_dropout -gt 0) {
-    $extra += "--caption_dropout=$cap_dropout"
+    $extra += "--caption_dropout_rate=$cap_dropout"
     }
     if ($net_dropout -gt 0) {
         $extra += "--network_dropout=$net_dropout"
