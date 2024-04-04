@@ -1,5 +1,5 @@
 # This script is intended for use with sd-scripts, please install that if you haven't already:
-# https://github.com/kohya-ss/sd-scripts
+# https://github.com/ArgentVASIMR/FD-lora/wiki/Installing-sd%E2%80%90scripts-(Our-Method,-For-Windows)
 
 # Please visit the Furry Diffusion LoRA repo!
 # https://github.com/ArgentVASIMR/FD-lora
@@ -8,15 +8,18 @@
     # argentvasimr
     # feffy
     # mmmmmmmm
-# Last edited 8-03-2024 (argentvasimr)
+
+# Last edited 4-04-2024 (argentvasimr)
 
 # IF THE DATE ABOVE IS OLDER THAN A MONTH, PLEASE CHECK THE REPO FOR LATEST: https://github.com/ArgentVASIMR/FD-lora
 
 # To implement:
     # Space-tolerant directories
-    # Fix unicode issue (if fixable)
 
-# For assistance, please ask in the LoRA training thread on Furry Diffusion: https://discord.com/channels/1019133813105905664/1065749961083469884
+# For assistance, please ask in either: 
+# - LoRA support forum on Furry Diffusion: https://discord.com/channels/1019133813105905664/1216117427700760586
+# - Github repo thread on Furry Diffusion: https://discord.com/channels/1019133813105905664/1213336377563815987
+# - Submit an issue in the repo itself: https://github.com/ArgentVASIMR/FD-LoRA/issues
 
 # Directories:
     $dataset_dir = ".\.dataset"
@@ -24,6 +27,7 @@
     $class_dir = ".\.class_img"
     $base_model_dir = "C:\your\models\folder\here"
     $prompts = ""; # Leave blank if you don't want sample images
+    $log_dir = "logs";
 
 # Base Model Config:
     $base_model     = "v1-5-pruned-emaonly.safetensors"
@@ -36,7 +40,7 @@
         $lora_name      = "myFirstLoRA"
         $version        = "prototype"
         $comment        = "This is my first LoRA"
-        $save_amount    = 10 # 0 to disable
+        $save_amount    = 10 # 0 to disable (doing so will also disable image previews)
 
     # Dataset Treatment:
         $base_res       = 512
@@ -54,7 +58,7 @@
     # Learning Rate:
         $unet_lr        = 1e-4
         $text_enc_lr    = 5e-5
-        $scale_lr_batch = $true # Scale learning rate by batch size.
+        $scale_lr_batch = $true # If true, will scale learning rate by batch size.
         $lr_scheduler   = "cosine" # Recommended options are "cosine", "linear".
 
     # Network:
@@ -67,7 +71,6 @@
         $grad_checkpt   = $false
         $full_precision = $false
         $fp8_base       = $false
-        $latents_disk   = $false
 
 # =============================================================================================
 # [!!!] BEYOND THIS POINT IS STUFF YOU SHOULD NOT TOUCH UNLESS YOU KNOW WHAT YOU'RE DOING [!!!]
@@ -77,8 +80,9 @@
 
     # Debugging:
         $warnings       = $true
-        $is_lr_free     = $false
-        $max_aspect     = 2
+        $is_lr_free     = $false    
+        $pause_at_end   = $true
+        $deactivate     = $true
         $precision      = "fp16"
 
     # Advanced:
@@ -94,12 +98,9 @@
     $run_script = "train_network.py"
     $extra = @()
     $opt_args = @()
+    $generic_warning = "If you do not want warnings, set `$warnings to false."
 
 # Directories
-    if ($prompts -ne "") {
-        $extra += "--sample_prompts=$prompts", "--sample_sampler=euler", "--sample_every_n_steps=$save_nth_step"
-    }
-
     $full_name =  $lora_name + "_" + $version
     [String]$unique_output = "$output_dir\$full_name"
 
@@ -120,9 +121,6 @@
     if ($comment -ne ""){
         $extra += "--training_comment=$comment"
     }
-
-
-$generic_warning = "If you do not want warnings, set `$warnings to false."
 
 # Dataset Treatment
     if (($base_res -lt 512) -and ($warnings -eq $true)){
@@ -154,11 +152,15 @@ $generic_warning = "If you do not want warnings, set `$warnings to false."
     }
 
 # Steps
-    $total_grad_acc = $batch_size*$grad_acc_step
-    $base_steps = [int]([Math]::Round($base_steps / $total_grad_acc))
+    $eff_batch_size = $batch_size*$grad_acc_step
+    $base_steps = [int]([Math]::Round($base_steps / $eff_batch_size))
     if ($save_amount -gt 0){
         $save_nth_step = [int]([Math]::Round($base_steps / $save_amount))
         $extra += "--save_every_n_steps=$save_nth_step"
+
+        if ($prompts -ne "") {
+            $extra += "--sample_prompts=$prompts", "--sample_sampler=euler", "--sample_every_n_steps=$save_nth_step"
+        }
     }
 
 # Check if warmup is set to a valid value with the warmup type
@@ -198,8 +200,6 @@ $generic_warning = "If you do not want warnings, set `$warnings to false."
         $extra += "--lr_warmup_steps=$warmup_steps"
     }
 
-    Write-Host "Past!"
-
 # Network
     $lr_scheduler = $lr_scheduler.ToLower()
 
@@ -216,17 +216,14 @@ $generic_warning = "If you do not want warnings, set `$warnings to false."
     if ($fp8_base -eq $true) {
         $extra += "--fp8_base"
     }
-    if ($latents_disk -eq $true) {
-        $extra += "--cache_latents_to_disk"
-    }
 
 # Debugging
     if ($correct_alpha -eq $true) {
         $net_alpha *= [Math]::Sqrt($net_dim)
     }
     if ($scale_lr_batch -eq $true) {
-        $unet_lr *= $total_grad_acc
-        $text_enc_lr *= $total_grad_acc
+        $unet_lr *= $eff_batch_size
+        $text_enc_lr *= $eff_batch_size
     }
     if (($optimiser -eq "prodigy") -or ($optimiser -eq "dadaptadam") -or ($optimiser -eq "dadaptation")) {
         $is_lr_free = $true
@@ -240,18 +237,14 @@ $generic_warning = "If you do not want warnings, set `$warnings to false."
             $opt_args += "d_coef=$d_coef"
         }
     }
-    $opt_args += "betas=0.9,0.99", "weight_decay=$weight_decay"
-
-    # Bucketing res calculations via $max_aspect [1]
-    if ($max_aspect -lt 1) {
-        $max_aspect = 1/$max_aspect # Flip aspect ratio if it's less than 1
+    if ($optimiser -ne "adafactor") {
+        $opt_args += "betas=0.9,0.99"
     }
-    $max_bucket_res = [int]([Math]::Ceiling([Math]::Sqrt(($base_res * $base_res * $max_aspect)) / 64) * 64)
-    $min_bucket_res = [int]([Math]::Floor([Math]::Sqrt(($base_res * $base_res / $max_aspect)) / 64) * 64)
+    $opt_args += "weight_decay=$weight_decay"
 
 # Advanced
     if ($cap_dropout -gt 0) {
-    $extra += "--caption_dropout_rate=$cap_dropout"
+        $extra += "--caption_dropout_rate=$cap_dropout"
     }
     if ($net_dropout -gt 0) {
         $extra += "--network_dropout=$net_dropout"
@@ -263,7 +256,7 @@ $generic_warning = "If you do not want warnings, set `$warnings to false."
 .\venv\scripts\activate
 
 accelerate launch --num_cpu_threads_per_process 8 $run_script `
-    --logging_dir="logs" --log_prefix="$lora_name" `
+    --logging_dir="$log_dir" --log_prefix="$lora_name" `
     --network_module="networks.lora" `
     --max_data_loader_n_workers=1 --persistent_data_loader_workers `
     --caption_extension=".txt" --shuffle_caption --keep_tokens="$keep_tags" --max_token_length=225 `
@@ -273,7 +266,7 @@ accelerate launch --num_cpu_threads_per_process 8 $run_script `
     --train_data_dir="$dataset_dir" --output_dir="$unique_output" --reg_data_dir="$class_dir" --pretrained_model_name_or_path="$base_model_dir_full" `
     --output_name="$full_name" `
     --unet_lr="$unet_lr" --text_encoder_lr="$text_enc_lr" `
-    --resolution="$base_res" --enable_bucket --min_bucket_reso="$min_bucket_res" --max_bucket_reso="$max_bucket_res" --bucket_reso_steps="$bucket_step" `
+    --resolution="$base_res" --enable_bucket --bucket_reso_steps="$bucket_step" `
     --train_batch_size="$batch_size" --gradient_accumulation_steps="$grad_acc_step" `
     --optimizer_type="$optimiser" --lr_scheduler="$lr_scheduler" --network_dim="$net_dim" --network_alpha="$net_alpha" `
     --noise_offset="$noise_offset" `
@@ -284,12 +277,14 @@ accelerate launch --num_cpu_threads_per_process 8 $run_script `
     --optimizer_args $opt_args `
     $extra `
 
-Write-Host "Training finished!" -ForegroundColor green
-pause
-deactivate
+if ($pause_at_end -eq $true){
+    Write-Host "Process finished. If you don't want this pause, disable it by setting `$pause_at_end to false." -ForegroundColor green
+    pause
+}
 
-# Sources:
-# [1] == https://math.stackexchange.com/questions/2133509/how-do-i-calculate-the-length-and-width-for-a-known-area-and-ratio
+if ($deactivate -eq $true) {
+    deactivate
+}
 
-# This script is originally derived from the powershell script in Raven's LoRA Training Rentry: https://rentry.org/59xed3
-# Please ask Furry Diffusion about your LoRA training queries before consulting the above Rentry; it is not endorsed by Furry Diffusion.
+# This script is originally derived from the powershell script in Raven's LoRA Training Rentry.
+# Please ask Furry Diffusion about your LoRA training queries before consulting said Rentry; it is not endorsed by Furry Diffusion.
