@@ -15,6 +15,7 @@
 
 # To implement:
     # Space-tolerant directories
+    # Automated tensorboard startup
 
 # For assistance, please ask in either: 
 # - LoRA support forum on Furry Diffusion: https://discord.com/channels/1019133813105905664/1216117427700760586
