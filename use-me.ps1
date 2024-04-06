@@ -126,12 +126,12 @@
 # Dataset Treatment
     if (($base_res -lt 512) -and ($warnings -eq $true)){
         Write-Host "WARNING: Your base resolution is set to less than 512 pixels, which is lower than what SD 1.5 is trained at." -ForegroundColor Yellow
-        Write-Host "If this is intentional, then proceed by pressing enter. Otherwise, close this window to fix your settings." -ForegroundColor Yellow
+        Write-Host "If this is intentional, then proceed by pressing enter. Otherwise, close this window and fix your settings." -ForegroundColor Yellow
         Write-Host "$generic_warning" -ForegroundColor Magenta
         pause
     } elseif (($base_res -lt 1024) -and ($sdxl -eq $true) -and ($warnings -eq $true)){
         Write-Host "WARNING: Your base resolution is set to less than 1024 pixels, which is lower than what SDXL is trained at." -ForegroundColor Yellow
-        Write-Host "If this is intentional, then proceed by pressing enter. Otherwise, close this window to fix your settings." -ForegroundColor Yellow
+        Write-Host "If this is intentional, then proceed by pressing enter. Otherwise, close this window and fix your settings." -ForegroundColor Yellow
         Write-Host "$generic_warning" -ForegroundColor Magenta
         pause
     }
@@ -217,9 +217,9 @@
     if ($fp8_base -eq $true) {
         $extra += "--fp8_base"
     }
-    if (($sdxl -eq $true) -and ($grad_checkpt -eq $false)) {
+    if (($sdxl -eq $true) -and ($grad_checkpt -eq $false) -and ($warnings -eq $true)) {
         Write-Host "WARNING: SDXL will use a lot of VRAM, and gradient checkpointing can help you avoid an `"Out of Memory`" error. You have gradient checkpointing turned off." -ForegroundColor Yellow
-        Write-Host "If this is intentional, then proceed by pressing enter. Otherwise, close this window to fix your settings." -ForegroundColor Yellow
+        Write-Host "If this is intentional, then proceed by pressing enter. Otherwise, close this window and fix your settings." -ForegroundColor Yellow
         Write-Host "$generic_warning" -ForegroundColor Magenta
         pause
     }
