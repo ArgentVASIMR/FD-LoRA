@@ -217,6 +217,12 @@
     if ($fp8_base -eq $true) {
         $extra += "--fp8_base"
     }
+    if (($sdxl -eq $true) -and ($grad_checkpt -eq $false)) {
+        Write-Host "WARNING: SDXL will use a lot of VRAM, and gradient checkpointing can help you avoid an `"Out of Memory`" error. You have gradient checkpointing turned off." -ForegroundColor Yellow
+        Write-Host "If this is intentional, then proceed by pressing enter. Otherwise, close this window to fix your settings." -ForegroundColor Yellow
+        Write-Host "$generic_warning" -ForegroundColor Magenta
+        pause
+    }
 
 # Debugging
     if ($correct_alpha -eq $true) {
