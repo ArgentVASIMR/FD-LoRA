@@ -9,7 +9,7 @@
     # feffy
     # mmmmmmmm
 
-# Last edited 4-04-2024 (argentvasimr)
+# Last edited 5-05-2024 (argentvasimr)
 
 # IF THE DATE ABOVE IS OLDER THAN A MONTH, PLEASE CHECK THE REPO FOR LATEST: https://github.com/ArgentVASIMR/FD-lora
 
@@ -85,6 +85,7 @@
         $pause_at_end   = $true
         $deactivate     = $true
         $precision      = "fp16"
+        $class_2x_steps = $true
 
     # Advanced:
     # (MAY BE REMOVED FROM CONFIG OUTRIGHT IN FUTURE IF NO ADDITIONAL CHANGES ARE RECOMMENDED)
@@ -248,6 +249,16 @@
         $opt_args += "betas=0.9,0.99"
     }
     $opt_args += "weight_decay=$weight_decay"
+
+    if ($class_2x_steps -eq $true) {
+        $classdata = Get-ChildItem -Path $class_dir
+
+        if ($classdata.Count -gt 0) {
+            Write-Host "Class dataset found; doubling step count"
+            $base_steps *= 2
+            $warmup_steps *= 2
+        }
+    }
 
 # Advanced
     if ($cap_dropout -gt 0) {
