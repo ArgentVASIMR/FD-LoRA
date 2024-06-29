@@ -9,7 +9,7 @@
     # feffy
     # mmmmmmmm
 
-# Last edited 5-05-2024 (argentvasimr)
+# Last edited 29-6-2024 (D/M/Y) (argentvasimr)
 
 # IF THE DATE ABOVE IS OLDER THAN A MONTH, PLEASE CHECK THE REPO FOR LATEST: https://github.com/ArgentVASIMR/FD-lora
 
@@ -101,6 +101,7 @@
     $extra = @()
     $opt_args = @()
     $generic_warning = "If you do not want warnings, set `$warnings to false."
+    $generic_optional = "If this is intentional, then proceed by pressing enter. Otherwise, shut down this process and fix your settings."
 
 # Directories
     $full_name =  $lora_name + "_" + $version
@@ -127,23 +128,29 @@
 # Dataset Treatment
     if (($base_res -lt 512) -and ($warnings -eq $true)){
         Write-Host "WARNING: Your base resolution is set to less than 512 pixels, which is lower than what SD 1.5 is trained at." -ForegroundColor Yellow
-        Write-Host "If this is intentional, then proceed by pressing enter. Otherwise, close this window and fix your settings." -ForegroundColor Yellow
+        Write-Host "$generic_optional" -ForegroundColor Yellow
         Write-Host "$generic_warning" -ForegroundColor Magenta
         pause
     } elseif (($base_res -lt 1024) -and ($sdxl -eq $true) -and ($warnings -eq $true)){
         Write-Host "WARNING: Your base resolution is set to less than 1024 pixels, which is lower than what SDXL is trained at." -ForegroundColor Yellow
-        Write-Host "If this is intentional, then proceed by pressing enter. Otherwise, close this window and fix your settings." -ForegroundColor Yellow
+        Write-Host "$generic_optional" -ForegroundColor Yellow
         Write-Host "$generic_warning" -ForegroundColor Magenta
         pause
     }
 
     if ((($bucket_step/8) -isnot [int]) -and ($warnings -eq $true)){
-        Write-Host "ERROR: `$bucket_step must be a multiple of 8 when using SD 1.5 models or similar." -ForegroundColor Red
+        Write-Host "ERROR: `$bucket_step must be a multiple of 8 when using SD 1.5 models or similar. It is currently set to $($bucket_step)." -ForegroundColor Red
         Write-Host "$generic_warning" -ForegroundColor Magenta
         pause
         exit
     } elseif ((($bucket_step/32) -isnot [int]) -and ($sdxl -eq $true)  -and ($warnings -eq $true)){
-        Write-Host "ERROR: `$bucket_step must be a multiple of 32 when using SDXL models." -ForegroundColor Red
+        Write-Host "ERROR: `$bucket_step must be a multiple of 32 when using SDXL models. It is currently set to $($bucket_step)." -ForegroundColor Red
+        Write-Host "$generic_warning" -ForegroundColor Magenta
+        pause
+        exit
+    }
+    if ($bucket_step -gt $base_res){
+        Write-Host "ERROR: `$bucket_step is higher than `$base_res. If unsure of this setting, set it to 64 and forget about it." -ForegroundColor Red
         Write-Host "$generic_warning" -ForegroundColor Magenta
         pause
         exit
