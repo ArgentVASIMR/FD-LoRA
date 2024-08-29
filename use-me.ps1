@@ -9,7 +9,7 @@
     # feffy
     # mmmmmmmm
 
-# Last edited 29-6-2024 (D/M/Y) (argentvasimr)
+# Last edited 30-8-2024 (D/M/Y) (argentvasimr)
 
 # IF THE DATE ABOVE IS OLDER THAN A MONTH, PLEASE CHECK THE REPO FOR LATEST: https://github.com/ArgentVASIMR/FD-lora
 
@@ -86,6 +86,7 @@
         $deactivate     = $true
         $precision      = "fp16"
         $class_2x_steps = $true
+        $warmup_always  = $false
 
     # Advanced:
     # (MAY BE REMOVED FROM CONFIG OUTRIGHT IN FUTURE IF NO ADDITIONAL CHANGES ARE RECOMMENDED)
@@ -205,9 +206,6 @@
         pause
         exit
     }
-    if ($warmup -gt 0) {
-        $extra += "--lr_warmup_steps=$warmup_steps"
-    }
 
 # Network
     $lr_scheduler = $lr_scheduler.ToLower()
@@ -237,8 +235,8 @@
         $net_alpha *= [Math]::Sqrt($net_dim)
     }
     if ($scale_lr_batch -eq $true) {
-        $unet_lr *= $eff_batch_size
-        $text_enc_lr *= $eff_batch_size
+        $unet_lr *= [Math]::Sqrt($eff_batch_size)
+        $text_enc_lr *= [Math]::Sqrt($eff_batch_size)
     }
     if (($optimiser -eq "prodigy") -or ($optimiser -eq "dadaptadam") -or ($optimiser -eq "dadaptation")) {
         $is_lr_free = $true
@@ -261,10 +259,21 @@
         $classdata = Get-ChildItem -Path $class_dir
 
         if ($classdata.Count -gt 0) {
-            Write-Host "Class dataset found; doubling step count"
+            Write-Host "Class dataset found; doubling step count."
             $base_steps *= 2
             $warmup_steps *= 2
         }
+    }
+    if ((($optimiser -eq "prodigy") -or ($optimiser -eq "dadaptadam")) -and ($warmup_always -eq $false)){
+        Write-Host "Optimiser is set to "$($optimiser)"; disabling warmup."
+        $warmup = 0
+    }
+    if ($warmup -gt 0) {
+        $extra += "--lr_warmup_steps=$warmup_steps"
+    }
+    if (($warmup_always -eq $true) -and (($optimiser -eq "prodigy"))){
+        Write-Host "Optimiser is set to "$($optimiser)" and `$warmup_always is set to `$true; enabling safeguard warmup."
+        $extra += "--safeguard_warmup=True"
     }
 
 # Advanced
@@ -298,7 +307,7 @@ accelerate launch --num_cpu_threads_per_process 8 $run_script `
     --seed="$seed" `
     --clip_skip="$clip_skip" `
     --max_train_steps="$base_steps" `
-    --min_snr_gamma=5 `
+    --min_snr_gamma=1 `
     --optimizer_args $opt_args `
     $extra `
 
