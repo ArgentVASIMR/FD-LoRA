@@ -38,40 +38,40 @@
 
 # Training Config:
     # Output Settings:
-        $lora_name      = "myFirstLoRA"
-        $version        = "prototype"
-        $comment        = "This is my first LoRA"
-        $save_amount    = 10 # 0 to disable (doing so will also disable image previews)
+        $lora_name     = "myFirstLoRA"
+        $version       = "prototype"
+        $comment       = "This is my first LoRA"
+        $save_amount   = 10 # 0 to disable (doing so will also disable image previews)
 
     # Dataset Treatment:
-        $base_res       = 512
-        $bucket_step    = 64
-        $flip_aug       = $true
-        $keep_tags      = 1
+        $base_res      = 512
+        $bucket_step   = 64
+        $flip_aug      = $true
+        $keep_tags     = 1
 
     # Steps:
-        $base_steps     = 2000
-        $batch_size     = 1
-        $grad_acc_step  = 1
-        $warmup         = 0.1 # 0 to disable
-        $warmup_type    = "percent" # "percent", "steps", "steps_batch"
+        $base_steps    = 2000
+        $batch_size    = 1
+        $grad_acc_step = 1
+        $scale_steps   = $true
+        $warmup        = 0.1 # 0 to disable
+        $warmup_type   = "percent" # Options are "percent", "steps", "steps_batch"
 
     # Learning Rate:
-        $unet_lr        = 1e-4
-        $text_enc_lr    = 5e-5
-        $scale_lr_batch = $true # If true, will scale learning rate by batch size.
-        $lr_scheduler   = "cosine" # Recommended options are "cosine", "linear".
+        $unet_lr       = 1e-4
+        $text_enc_lr   = 5e-5
+        $scale_lr      = $true
+        $lr_scheduler  = "cosine" # Options are "cosine", "linear", "constant", "constant_with_warmup".
 
     # Network:
-        $net_dim        = 16
-        $net_alpha      = 16
-        $optimiser      = "adamw" # Recommended options are "adamw", "adamw8bit", "dadaptadam".
-        $correct_alpha  = $false # Apply scaling to alpha, multiplying by sqrt($net_dim)
+        $net_dim       = 16
+        $net_alpha     = 16
+        $optimiser     = "adamw" # Options are "adamw", "adamw8bit", "dadaptadam".
 
     # Performance:
-        $grad_checkpt   = $false
-        $full_precision = $false
-        $fp8_base       = $false
+        $grad_checkpt  = $false
+        $lora_weight   = "fp32" # Options are "fp32", "fp16", "bf16"
+        $fp8_base      = $false
 
 # =============================================================================================
 # [!!!] BEYOND THIS POINT IS STUFF YOU SHOULD NOT TOUCH UNLESS YOU KNOW WHAT YOU'RE DOING [!!!]
@@ -84,29 +84,75 @@
         $is_lr_free     = $false    
         $pause_at_end   = $true
         $deactivate     = $true
-        $precision      = "fp16"
+        $precision      = "auto" # Options are "auto", "fp16", "bf16"
         $class_2x_steps = $true
         $warmup_always  = $false
+        $old_lr_scale   = $false
 
     # Advanced:
-    # (MAY BE REMOVED FROM CONFIG OUTRIGHT IN FUTURE IF NO ADDITIONAL CHANGES ARE RECOMMENDED)
+    # (MAY BE REMOVED FROM CONFIG IN FUTURE IF NO ADDITIONAL CHANGES ARE RECOMMENDED)
         $weight_decay   = 0.01
-        $seed           = 0
+        $seed           = 1
         $cap_dropout    = 0.0
         $net_dropout    = 0.1
+        $tag_dropout    = 0.0
         $scale_weight   = 0
         $d_coef         = 1.0
+        $noise_offset   = 0.0375
+        $min_snr_gamma  = 1
+        $correct_alpha  = $false # Apply scaling to alpha, multiplying by sqrt($net_dim)
+
+        $extra = @() # Add args to here instead of editing the args at the bottom of this script
+        $opt_args = @() # Add args to here instead of editing the args at the bottom of this script
 
 # Declaring/setting variables for later
     $run_script = "train_network.py"
-    $extra = @()
-    $opt_args = @()
     $generic_warning = "If you do not want warnings, set `$warnings to false."
     $generic_optional = "If this is intentional, then proceed by pressing enter. Otherwise, shut down this process and fix your settings."
+    $eff_batch_size = $batch_size*$grad_acc_step
+
+    # Multiplying learning rates by batch size / gradient accumulation steps
+    if ($scale_lr -eq $true) {
+        $old_unet_lr = $unet_lr
+        $old_te_lr = $text_enc_lr
+
+        if ($old_lr_scale -eq $true){
+            $unet_lr *= $eff_batch_size
+            $text_enc_lr *= $eff_batch_size
+        } else {
+            $unet_lr *= [Math]::Sqrt($eff_batch_size)
+            $text_enc_lr *= [Math]::Sqrt($eff_batch_size)
+        }
+    }
+
+    # Auto-adjusting precision based on LoRA weight precision setting:
+    if ($precision -eq "auto"){
+        if ($lora_weight -eq "fp32"){
+            $precision = "fp16"
+        } else {
+            $precision = $lora_weight
+        }
+    }
 
 # Directories
     $full_name =  $lora_name + "_" + $version
     [String]$unique_output = "$output_dir\$full_name"
+
+# Messages to inform the user on whats going on
+    if ($class_2x_steps -eq $true) {
+        $classdata = Get-ChildItem -Path $class_dir
+
+        if ($classdata.Count -gt 0) {
+            Write-Host "Class dataset found; doubling step count."
+            $base_steps *= 2
+            $warmup_steps *= 2
+        }
+    }
+    if (($scale_steps -eq $true) -and ($eff_batch_size -gt 1)) {
+        Write-Host "`$scale_lr_batch is set to true, learning rates have been adjusted to compensate:"
+        Write-Host "Unet LR: $old_unet_lr --> $unet_lr"
+        Write-Host "Text Encoder LR: $old_te_lr --> $text_enc_lr"
+    }
 
 # Model Settings
     $base_model_dir_full = "$base_model_dir\$base_model"
@@ -114,8 +160,6 @@
     if ($v_prediction -eq $true) {
         $extra += "--v_parameterization", "--zero_terminal_snr"
         $noise_offset = 0.0
-    } else {
-        $noise_offset = 0.01
     }
     if ($sdxl -eq $true) {
         $run_script = "SDXL_train_network.py"
@@ -162,7 +206,6 @@
     }
 
 # Steps
-    $eff_batch_size = $batch_size*$grad_acc_step
     $base_steps = [int]([Math]::Round($base_steps / $eff_batch_size))
     if ($save_amount -gt 0){
         $save_nth_step = [int]([Math]::Round($base_steps / $save_amount))
@@ -214,10 +257,10 @@
     if ($grad_checkpt -eq $true) {
         $extra += "--gradient_checkpointing"
     }
-    if (($full_precision -eq $true) -and ($precision = "fp16")) {
+    if ($lora_weight -eq "fp16") {
         $extra += "--full_fp16"
     }
-    if (($full_precision -eq $true) -and ($precision = "bf16")) {
+    if ($lora_weight -eq "bf16") {
         $extra += "--full_bf16"
     }
     if ($fp8_base -eq $true) {
@@ -233,10 +276,6 @@
 # Debugging
     if ($correct_alpha -eq $true) {
         $net_alpha *= [Math]::Sqrt($net_dim)
-    }
-    if ($scale_lr_batch -eq $true) {
-        $unet_lr *= [Math]::Sqrt($eff_batch_size)
-        $text_enc_lr *= [Math]::Sqrt($eff_batch_size)
     }
     if (($optimiser -eq "prodigy") -or ($optimiser -eq "dadaptadam") -or ($optimiser -eq "dadaptation")) {
         $is_lr_free = $true
@@ -255,15 +294,6 @@
     }
     $opt_args += "weight_decay=$weight_decay"
 
-    if ($class_2x_steps -eq $true) {
-        $classdata = Get-ChildItem -Path $class_dir
-
-        if ($classdata.Count -gt 0) {
-            Write-Host "Class dataset found; doubling step count."
-            $base_steps *= 2
-            $warmup_steps *= 2
-        }
-    }
     if ((($optimiser -eq "prodigy") -or ($optimiser -eq "dadaptadam")) -and ($warmup_always -eq $false)){
         Write-Host "Optimiser is set to "$($optimiser)"; disabling warmup."
         $warmup = 0
@@ -286,6 +316,9 @@
     if ($scale_weight -gt 0) {
         $extra += "--scale_weight_norms=$scale_weight"
     }
+    if ($tag_dropout -gt 0) {
+        $extra += "--caption_tag_dropout_rate=$tag_dropout"
+    }
 
 .\venv\scripts\activate
 
@@ -307,7 +340,7 @@ accelerate launch --num_cpu_threads_per_process 8 $run_script `
     --seed="$seed" `
     --clip_skip="$clip_skip" `
     --max_train_steps="$base_steps" `
-    --min_snr_gamma=1 `
+    --min_snr_gamma="$min_snr_gamma" `
     --optimizer_args $opt_args `
     $extra `
 
