@@ -72,6 +72,7 @@
         $grad_checkpt  = $false
         $lora_weight   = "fp32" # Options are "fp32", "fp16", "bf16"
         $fp8_base      = $false
+        $unet_only     = $false
 
 # =============================================================================================
 # [!!!] BEYOND THIS POINT IS STUFF YOU SHOULD NOT TOUCH UNLESS YOU KNOW WHAT YOU'RE DOING [!!!]
@@ -112,7 +113,7 @@
     $eff_batch_size = $batch_size*$grad_acc_step
 
     # Multiplying learning rates by batch size / gradient accumulation steps
-    if ($scale_lr -eq $true) {
+    if ($scale_lr -eq $true){
         $old_unet_lr = $unet_lr
         $old_te_lr = $text_enc_lr
 
@@ -148,7 +149,7 @@
             $warmup_steps *= 2
         }
     }
-    if (($scale_steps -eq $true) -and ($eff_batch_size -gt 1)) {
+    if (($scale_steps -eq $true) -and ($eff_batch_size -gt 1)){
         Write-Host "`$scale_lr_batch is set to true, learning rates have been adjusted to compensate:"
         Write-Host "Unet LR: $old_unet_lr --> $unet_lr"
         Write-Host "Text Encoder LR: $old_te_lr --> $text_enc_lr"
@@ -157,11 +158,11 @@
 # Model Settings
     $base_model_dir_full = "$base_model_dir\$base_model"
     
-    if ($v_prediction -eq $true) {
+    if ($v_prediction -eq $true){
         $extra += "--v_parameterization", "--zero_terminal_snr"
         $noise_offset = 0.0
     }
-    if ($sdxl -eq $true) {
+    if ($sdxl -eq $true){
         $run_script = "SDXL_train_network.py"
     }
 
@@ -201,7 +202,7 @@
         exit
     }
 
-    if ($flip_aug -eq $true) {
+    if ($flip_aug -eq $true){
         $extra += "--flip_aug"
     }
 
@@ -217,19 +218,19 @@
     }
 
 # Check if warmup is set to a valid value with the warmup type
-    if (($warmup -ge 1) -and ($warmup_type -eq "percent") -and ($warnings -eq $true)) {
+    if (($warmup -ge 1) -and ($warmup_type -eq "percent") -and ($warnings -eq $true)){
         Write-Host "ERROR: The warmup percentage is set to equal to or greater than 1.0 ($warmup)." -ForegroundColor Red
         Write-Host "Please set `$warmup to less than 1 (recommended value is 0.1), OR set `$warmup_type to `"steps`" or `"steps_batch`"." -ForegroundColor Red
         Write-Host "$generic_warning" -ForegroundColor Magenta
         pause
         exit
-    } elseif (($warmup -lt 1) -and ($warmup_type -ne "percent") -and ($warnings -eq $true)) {
+    } elseif (($warmup -lt 1) -and ($warmup_type -ne "percent") -and ($warnings -eq $true)){
         Write-Host "ERROR: The warmup steps are less than 1 ($warmup)." -ForegroundColor Red
         Write-Host "Please set `$warmup to an integer greater than 1 (recommended value is 200), OR set `$warmup_type to `"percent`"." -ForegroundColor Red
         Write-Host "$generic_warning" -ForegroundColor Magenta
         pause
         exit
-    } elseif (($warmup -isnot [int]) -and ($warmup_type -ne "percent") -and ($warnings -eq $true)) {
+    } elseif (($warmup -isnot [int]) -and ($warmup_type -ne "percent") -and ($warnings -eq $true)){
         Write-Host "ERROR: The inputted warmup steps is a decimal and not an integer." -ForegroundColor Red
         Write-Host "Please set an integer value for `$warmup or set `$warmup_type to `"percent`"." -ForegroundColor Red
         Write-Host "$generic_warning" -ForegroundColor Magenta
@@ -239,10 +240,10 @@
 
     if (($warmup_type -eq "percent") -or ($warmup_type -eq "steps_batch")){
         $warmup_steps = [int]([Math]::Round(($base_steps*$warmup)))
-    } elseif ($warmup_type -eq "steps") {
+    } elseif ($warmup_type -eq "steps"){
         $warmup_steps = $warmup
     }
-    if ($warmup_steps -gt $base_steps) {
+    if ($warmup_steps -gt $base_steps){
         Write-Host "ERROR: Warmup steps cannot be greater than your base steps." -ForegroundColor Red
         Write-Host "Please ensure `$warmup is set to a number less than your base steps." -ForegroundColor Red
         Write-Host "$generic_warning" -ForegroundColor Magenta
@@ -254,42 +255,45 @@
     $lr_scheduler = $lr_scheduler.ToLower()
 
 # Performance
-    if ($grad_checkpt -eq $true) {
+    if ($grad_checkpt -eq $true){
         $extra += "--gradient_checkpointing"
     }
-    if ($lora_weight -eq "fp16") {
+    if ($lora_weight -eq "fp16"){
         $extra += "--full_fp16"
     }
-    if ($lora_weight -eq "bf16") {
+    if ($lora_weight -eq "bf16"){
         $extra += "--full_bf16"
     }
-    if ($fp8_base -eq $true) {
+    if ($fp8_base -eq $true){
         $extra += "--fp8_base"
     }
-    if (($sdxl -eq $true) -and ($grad_checkpt -eq $false) -and ($warnings -eq $true)) {
+    if (($sdxl -eq $true) -and ($grad_checkpt -eq $false) -and ($warnings -eq $true)){
         Write-Host "WARNING: SDXL will use a lot of VRAM, and gradient checkpointing can help you avoid an `"Out of Memory`" error. You have gradient checkpointing turned off." -ForegroundColor Yellow
         Write-Host "If this is intentional, then proceed by pressing enter. Otherwise, close this window and fix your settings." -ForegroundColor Yellow
         Write-Host "$generic_warning" -ForegroundColor Magenta
         pause
     }
+    if ($unet_only -eq $true){
+        $extra += "--network_train_unet_only"
+    }
 
 # Debugging
-    if ($correct_alpha -eq $true) {
+    if ($correct_alpha -eq $true){
         $net_alpha *= [Math]::Sqrt($net_dim)
     }
-    if (($optimiser -eq "prodigy") -or ($optimiser -eq "dadaptadam") -or ($optimiser -eq "dadaptation")) {
+    if (($optimiser -eq "prodigy") -or ($optimiser -eq "dadaptadam") -or ($optimiser -eq "dadaptation")){
         $is_lr_free = $true
     }
-    if ($is_lr_free -eq $true) {
+    if ($is_lr_free -eq $true){
         $unet_lr = 1
         $text_enc_lr = 1
         $opt_args += "decouple=True","use_bias_correction=True"
         $extra += "--max_grad_norm=0"
-        if ($optimiser -eq "prodigy") {
+        if ($optimiser -eq "prodigy"){
             $opt_args += "d_coef=$d_coef"
         }
     }
-    if ($optimiser -ne "adafactor") {
+    if ($optimiser -ne "adafactor"){
         $opt_args += "betas=0.9,0.99"
     }
     $opt_args += "weight_decay=$weight_decay"
@@ -298,7 +302,7 @@
         Write-Host "Optimiser is set to "$($optimiser)"; disabling warmup."
         $warmup = 0
     }
-    if ($warmup -gt 0) {
+    if ($warmup -gt 0){
         $extra += "--lr_warmup_steps=$warmup_steps"
     }
     if (($warmup_always -eq $true) -and (($optimiser -eq "prodigy"))){
@@ -307,16 +311,16 @@
     }
 
 # Advanced
-    if ($cap_dropout -gt 0) {
+    if ($cap_dropout -gt 0){
         $extra += "--caption_dropout_rate=$cap_dropout"
     }
-    if ($net_dropout -gt 0) {
+    if ($net_dropout -gt 0){
         $extra += "--network_dropout=$net_dropout"
     }
-    if ($scale_weight -gt 0) {
+    if ($scale_weight -gt 0){
         $extra += "--scale_weight_norms=$scale_weight"
     }
-    if ($tag_dropout -gt 0) {
+    if ($tag_dropout -gt 0){
         $extra += "--caption_tag_dropout_rate=$tag_dropout"
     }
 
@@ -349,7 +353,7 @@ if ($pause_at_end -eq $true){
     pause
 }
 
-if ($deactivate -eq $true) {
+if ($deactivate -eq $true){
     deactivate
 }
 
