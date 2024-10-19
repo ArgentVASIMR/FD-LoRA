@@ -9,7 +9,7 @@
     # feffy
     # mmmmmmmm
 
-# Last edited 30-8-2024 (D/M/Y) (argentvasimr)
+# Last edited 20-10-2024 (D/M/Y) (argentvasimr)
 
 # IF THE DATE ABOVE IS OLDER THAN A MONTH, PLEASE CHECK THE REPO FOR LATEST: https://github.com/ArgentVASIMR/FD-lora
 
@@ -113,7 +113,7 @@
     $eff_batch_size = $batch_size*$grad_acc_step
 
     # Multiplying learning rates by batch size / gradient accumulation steps
-    if ($scale_lr -eq $true){
+    if (($scale_lr -eq $true) -and ($eff_batch_size -gt 1)){
         $old_unet_lr = $unet_lr
         $old_te_lr = $text_enc_lr
 
@@ -124,6 +124,10 @@
             $unet_lr *= [Math]::Sqrt($eff_batch_size)
             $text_enc_lr *= [Math]::Sqrt($eff_batch_size)
         }
+
+        Write-Host "`$scale_lr is set to true, learning rates have been adjusted to compensate:"
+        Write-Host "Unet LR: $old_unet_lr --> $unet_lr"
+        Write-Host "Text Encoder LR: $old_te_lr --> $text_enc_lr"
     }
 
     # Auto-adjusting precision based on LoRA weight precision setting:
@@ -149,12 +153,7 @@
             $warmup_steps *= 2
         }
     }
-    if (($scale_steps -eq $true) -and ($eff_batch_size -gt 1)){
-        Write-Host "`$scale_lr_batch is set to true, learning rates have been adjusted to compensate:"
-        Write-Host "Unet LR: $old_unet_lr --> $unet_lr"
-        Write-Host "Text Encoder LR: $old_te_lr --> $text_enc_lr"
-    }
-
+    
 # Model Settings
     $base_model_dir_full = "$base_model_dir\$base_model"
     
@@ -207,7 +206,13 @@
     }
 
 # Steps
-    $base_steps = [int]([Math]::Round($base_steps / $eff_batch_size))
+    if (($scale_steps -eq $true) -and ($eff_batch_size -gt 1)){
+        $old_steps = $base_steps
+        $base_steps = [int]([Math]::Round($base_steps / $eff_batch_size))
+
+        Write-Host "`$scale_lr_batch is set to true, step counts have been adjusted to compensate:"
+        Write-Host "Step count: $old_steps --> $base_steps"
+    }
     if ($save_amount -gt 0){
         $save_nth_step = [int]([Math]::Round($base_steps / $save_amount))
         $extra += "--save_every_n_steps=$save_nth_step"
