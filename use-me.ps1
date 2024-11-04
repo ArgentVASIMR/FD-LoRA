@@ -4,12 +4,7 @@
 # Please visit the Furry Diffusion LoRA repo!
 # https://github.com/ArgentVASIMR/FD-lora
 
-# Main contributors (discord): 
-    # argentvasimr
-    # feffy
-    # mmmmmmmm
-
-# Last edited 20-10-2024 (D/M/Y) (argentvasimr)
+# Last edited 04-11-2024 (D/M/Y) (argentvasimr)
 
 # IF THE DATE ABOVE IS OLDER THAN A MONTH, PLEASE CHECK THE REPO FOR LATEST: https://github.com/ArgentVASIMR/FD-lora
 
@@ -72,7 +67,7 @@
         $grad_checkpt  = $false
         $lora_weight   = "fp32" # Options are "fp32", "fp16", "bf16"
         $fp8_base      = $false
-        $unet_only     = $false
+        $unet_only     = 0 # 0 is off, 1 is partial, 2 is fully
 
 # =============================================================================================
 # [!!!] BEYOND THIS POINT IS STUFF YOU SHOULD NOT TOUCH UNLESS YOU KNOW WHAT YOU'RE DOING [!!!]
@@ -101,6 +96,7 @@
         $d_coef         = 1.0
         $noise_offset   = 0.0375
         $min_snr_gamma  = 1
+        $max_grad_norm  = 1
         $correct_alpha  = $false # Apply scaling to alpha, multiplying by sqrt($net_dim)
 
         $extra = @() # Add args to here instead of editing the args at the bottom of this script
@@ -151,6 +147,7 @@
             Write-Host "Class dataset found; doubling step count."
             $base_steps *= 2
             $warmup_steps *= 2
+            $save_amount /= 2
         }
     }
     
@@ -278,8 +275,20 @@
         Write-Host "$generic_warning" -ForegroundColor Magenta
         pause
     }
-    if ($unet_only -eq $true){
+
+    # Unet-only code
+    if ($unet_only -eq (1 -or 2)){
         $extra += "--network_train_unet_only"
+        if ($unet_only -eq 2){
+            $extra += "--cache_text_encoder_outputs"
+        }
+    } elseif ($unet_only -eq 0){
+        $extra += "--shuffle_caption"
+    } else {
+        Write-Host "ERROR: $unet_only set to an invalid value; please set it to 0, 1, or 2." -ForegroundColor Red
+        Write-Host "$generic_warning" -ForegroundColor Magenta
+        pause
+        exit
     }
 
 # Debugging
@@ -293,7 +302,7 @@
         $unet_lr = 1
         $text_enc_lr = 1
         $opt_args += "decouple=True","use_bias_correction=True"
-        $extra += "--max_grad_norm=0"
+        $extra += "--max_grad_norm=$max_grad_norm"
         if ($optimiser -eq "prodigy"){
             $opt_args += "d_coef=$d_coef"
         }
@@ -325,7 +334,7 @@
     if ($scale_weight -gt 0){
         $extra += "--scale_weight_norms=$scale_weight"
     }
-    if ($tag_dropout -gt 0){
+    if (($tag_dropout -gt 0) -and ($unet_only -eq (0 -or 1))){
         $extra += "--caption_tag_dropout_rate=$tag_dropout"
     }
 
@@ -335,7 +344,7 @@ accelerate launch --num_cpu_threads_per_process 8 $run_script `
     --logging_dir="$log_dir" --log_prefix="$lora_name" `
     --network_module="networks.lora" `
     --max_data_loader_n_workers=1 --persistent_data_loader_workers `
-    --caption_extension=".txt" --shuffle_caption --keep_tokens="$keep_tags" --max_token_length=225 `
+    --caption_extension=".txt" --keep_tokens="$keep_tags" --max_token_length=225 `
     --prior_loss_weight=1 `
     --mixed_precision="$precision" --save_precision="$precision" `
     --xformers --cache_latents --save_model_as=safetensors `
