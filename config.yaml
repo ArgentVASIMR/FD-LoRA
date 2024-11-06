@@ -1,0 +1,90 @@
+#directories
+dataset_dir     : D:\StableDiffusionProjects\SDInput
+output_dir      : D:\StableDiffusionProjects\SDOutput
+class_dir       : D:\StableDiffusionProjects\ClassImg
+base_model_dir  : C:\Users\antro\Documents\Matrix\Models\StableDiffusion
+prompts         : "" # Leave blank if you don't want sample images
+log_dir         : logs
+
+#base_model_config
+base_model      : noobaiXLNAIXL_epsilonPred10Version.safetensors
+clip_skip       : 2
+v_prediction    : false
+sdxl            : true
+
+
+#train_config
+
+#output
+lora_name     : Lora Name
+version       : Lora Version                      
+prev_version  : "" # if empty, sets disables resuming
+comment       : ""                             
+save_amount   : 10 # 0 to disable (doing so will also disable image previews.
+
+#dataset:
+base_res      : 1024
+bucket_step   : 64
+flip_aug      : true
+keep_tags     : 1
+
+#step_settings:
+base_steps    : 1500
+batch_size    : 1
+grad_acc_step : 1
+scale_steps   : true
+warmup        : 0.1 # 0 to disable
+warmup_type   : percent # Options are "percent", "steps", "steps_batch"
+
+#learning_rate:
+unet_lr       : 2.0e-4
+text_enc_lr   : 1.0e-4
+scale_lr      : true
+lr_scheduler  : cosine # Options are "cosine", "linear", "constant", "constant_with_warmup".
+  
+#network:
+net_dim       : 16
+net_alpha     : 16
+optimiser     : adamw # Options are "adamw", "adamw8bit", "dadaptadam".
+
+#performance:
+grad_checkpt  : true
+lora_weight   : fp16 # Options are "fp32", "fp16", "bf16"
+fp8_base      : true
+unet_only     : 0 # 0 is off, 1 is partial, 2 is fully
+
+#resume:
+save_state    : true
+resume        : true
+resume_path   : "" # leave blank to auto-fill based on lora name and prev version
+save_last_n_steps : 200
+
+# :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+# [!!!] BEYOND THIS POINT IS STUFF YOU SHOULD NOT TOUCH UNLESS YOU KNOW WHAT YOU'RE DOING [!!!]
+# [!!!]                          this is meant to be obnoxious :)                         [!!!]
+# [!!!] BEYOND THIS POINT IS STUFF YOU SHOULD NOT TOUCH UNLESS YOU KNOW WHAT YOU'RE DOING [!!!]
+# :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+#debugging:
+warnings       : true
+is_lr_free     : false    
+pause_at_end   : true
+notify         : true
+deactivate     : true
+precision      : "auto" # Options are "auto", "fp16", "bf16"
+class_2x_steps : true
+warmup_always  : false
+old_lr_scale   : false
+
+#avanced:
+# (MAY BE REMOVED FROM CONFIG IN FUTURE IF NO ADDITIONAL CHANGES ARE RECOMMENDED)
+weight_decay   : 0.01
+seed           : 1
+cap_dropout    : 0.0
+net_dropout    : 0.1
+tag_dropout    : 0.0
+scale_weight   : 0
+d_coef         : 1.0
+noise_offset   : 0.0375
+min_snr_gamma  : 1
+max_grad_norm  : 1
+correct_alpha  : false # Apply scaling to alpha, multiplying by sqrt(net_dim)
