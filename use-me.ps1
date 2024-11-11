@@ -4,7 +4,7 @@
 # Please visit the Furry Diffusion LoRA repo!
 # https://github.com/ArgentVASIMR/FD-lora
 
-# Last edited 04-11-2024 (D/M/Y) (argentvasimr)
+# Last edited 11-11-2024 (D/M/Y) (argentvasimr)
 
 # IF THE DATE ABOVE IS OLDER THAN A MONTH, PLEASE CHECK THE REPO FOR LATEST: https://github.com/ArgentVASIMR/FD-lora
 
@@ -98,6 +98,7 @@
         $min_snr_gamma  = 1
         $max_grad_norm  = 1
         $correct_alpha  = $false # Apply scaling to alpha, multiplying by sqrt($net_dim)
+        $loss_type      = "l2" # Options are "l2", "huber"
 
         $extra = @() # Add args to here instead of editing the args at the bottom of this script
         $opt_args = @() # Add args to here instead of editing the args at the bottom of this script
@@ -360,6 +361,7 @@ accelerate launch --num_cpu_threads_per_process 8 $run_script `
     --max_train_steps="$base_steps" `
     --min_snr_gamma="$min_snr_gamma" `
     --optimizer_args $opt_args `
+    --loss_type="$loss_type" `
     $extra `
 
 if ($pause_at_end -eq $true){
