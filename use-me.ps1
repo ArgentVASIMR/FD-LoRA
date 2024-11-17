@@ -4,7 +4,7 @@
 # Please visit the Furry Diffusion LoRA repo!
 # https://github.com/ArgentVASIMR/FD-lora
 
-# Last edited 11-11-2024 (D/M/Y) (argentvasimr)
+# Last edited 15-11-2024 (D/M/Y) (argentvasimr)
 
 # IF THE DATE ABOVE IS OLDER THAN A MONTH, PLEASE CHECK THE REPO FOR LATEST: https://github.com/ArgentVASIMR/FD-lora
 
@@ -68,6 +68,9 @@
         $lora_weight   = "fp32" # Options are "fp32", "fp16", "bf16"
         $fp8_base      = $false
         $unet_only     = 0 # 0 is off, 1 is partial, 2 is fully
+        $mem_eff_attn  = $false
+        $xformers      = $true
+        $sdpa          = $false
 
 # =============================================================================================
 # [!!!] BEYOND THIS POINT IS STUFF YOU SHOULD NOT TOUCH UNLESS YOU KNOW WHAT YOU'RE DOING [!!!]
@@ -292,6 +295,17 @@
         exit
     }
 
+    # Additional optimisation args:
+    if ($mem_eff_attn -eq $true){
+        $extra += "--mem_eff_attn"
+    }
+    if ($xformers -eq $true){
+        $extra += "--xformers"
+    }
+    if ($sdpa -eq $true){
+        $extra += "--sdpa"
+    }
+
 # Debugging
     if ($correct_alpha -eq $true){
         $net_alpha *= [Math]::Sqrt($net_dim)
@@ -348,7 +362,7 @@ accelerate launch --num_cpu_threads_per_process 8 $run_script `
     --caption_extension=".txt" --keep_tokens="$keep_tags" --max_token_length=225 `
     --prior_loss_weight=1 `
     --mixed_precision="$precision" --save_precision="$precision" `
-    --xformers --cache_latents --save_model_as=safetensors `
+    --cache_latents --save_model_as=safetensors `
     --train_data_dir="$dataset_dir" --output_dir="$unique_output" --reg_data_dir="$class_dir" --pretrained_model_name_or_path="$base_model_dir_full" `
     --output_name="$full_name" `
     --unet_lr="$unet_lr" --text_encoder_lr="$text_enc_lr" `
