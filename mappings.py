@@ -21,7 +21,8 @@ renames = {
     'net_dropout': 'network_dropout',
     'scale_weight': 'scale_weight_norms',
     'tag_dropout': 'caption_tag_dropout_rate',
-    'precision': 'mixed_precision'
+    'precision': 'mixed_precision',
+    'warmup_steps': 'lr_warmup_steps'
 }
 constants = {
     "network_module": "networks.lora",
