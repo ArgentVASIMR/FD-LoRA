@@ -2,8 +2,7 @@
   save_state    : true
   resume        : true
   resume_path   : "" # leave blank to auto-fill based on lora name and prev version
-  save_last_n_steps : 200
-
+  #save_last_n_steps : 200 # before you uncomment this, make sure that this gets disabled if resume is false
 # Debugging
   warnings       : true
   is_lr_free     : false
