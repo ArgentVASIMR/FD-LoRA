@@ -1,0 +1,6 @@
+  dataset_dir     : D:\StableDiffusionProjects\SDInput
+  output_dir      : D:\StableDiffusionProjects\SDOutput
+  class_dir       : D:\StableDiffusionProjects\ClassImg
+  base_model_dir  : C:\Users\antro\Documents\Matrix\Models\StableDiffusion
+  prompts         : "" # Leave blank if you don't want sample images
+  log_dir         : logs

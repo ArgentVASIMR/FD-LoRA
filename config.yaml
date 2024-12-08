@@ -7,8 +7,8 @@
   log_dir         : logs
 
 #base_model_config
-  base_model      : noobaiXLNAIXL_epsilonPred10Version.safetensors
-  clip_skip       : 2
+  base_model      : model.safetensors
+  clip_skip       : 1
   v_prediction    : false
   sdxl            : true
 
@@ -29,7 +29,7 @@
   keep_tags     : 1
 
 #step_settings:
-  base_steps    : 1500
+  base_steps    : 2000
   batch_size    : 1
   grad_acc_step : 1
   scale_steps   : true
@@ -37,8 +37,8 @@
   warmup_type   : percent # Options are "percent", "steps", "steps_batch"
 
 #learning_rate:
-  unet_lr       : 2.0e-4
-  text_enc_lr   : 1.0e-4
+  unet_lr       : 1.0e-4
+  text_enc_lr   : 2.0e-5
   scale_lr      : true
   lr_scheduler  : cosine # Options are "cosine", "linear", "constant", "constant_with_warmup".
   
@@ -66,18 +66,15 @@
 # :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 #debugging:
   warnings       : true
-  is_lr_free     : false    
-  pause_at_end   : true
+  is_lr_free     : false
   notify         : true
   precision      : "auto" # Options are "auto", "fp16", "bf16"
   class_2x_steps : true
   warmup_always  : false
-  old_lr_scale   : false
 
 #avanced:
 # (MAY BE REMOVED FROM CONFIG IN FUTURE IF NO ADDITIONAL CHANGES ARE RECOMMENDED)
   weight_decay   : 0.01
-  seed           : 1
   cap_dropout    : 0.0
   net_dropout    : 0.1
   tag_dropout    : 0.0
