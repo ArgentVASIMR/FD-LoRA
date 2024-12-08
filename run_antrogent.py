@@ -46,7 +46,7 @@ def train(arg_dict: dict):
     os.chdir(old_work_dir) 
 def main():
     yaml_list = ['config.yaml','directories.yaml','options.yaml','performance.yaml','hyperparameters.yaml']
-    arg_dict = utils.read_yamls(yaml_list)
+    arg_dict = utils.stack_yamls(yaml_list)
     train(arg_dict)
 
 if __name__ == "__main__":
