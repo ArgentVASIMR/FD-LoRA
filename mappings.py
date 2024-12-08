@@ -36,7 +36,8 @@ constants = {
 }
 remove_key_list = ['sdxl','base_model','base_model_dir','version','lora_name',
                'scale_steps','scale_lr','save_amount','warnings','deactivate','notify','pause_at_end','class_2x_steps','warmup_always','old_lr_scale',
-               'warmup','warmup_type','unet_only', 'lora_weight']
+               'warmup','warmup_type','unet_only', 'lora_weight', 
+               'resume', 'old_version', 'resume_path']
 
 optimizer_args = ['weight_decay','d_coef']
 #TODO implement:
