@@ -2,6 +2,7 @@ import mappings
 import os
 import sys
 import yaml
+import utils
 sd_scripts_install = 'D:\StableDiffusionProjects\sd-scripts' #TODO set this up as a command line argument or some other way so it isn't just a global
 sys.path.append(sd_scripts_install)
 
@@ -13,8 +14,7 @@ def generate_flags(dict: dict) -> list[str]:
     out = []
     for k, v in dict.items():
         if isinstance(v, bool):
-            if v:
-                out.append(f"--{k}")
+            if v:out.append(f"--{k}")
             continue
         if isinstance(v, str):
             if v == "": continue
@@ -43,19 +43,9 @@ def train(arg_dict: dict):
     train_util.verify_command_line_training_args(args)
     print('training')
     trainer.train(args)
-    os.chdir(old_work_dir)
-
-def read_yaml(path: str) -> dict:
-    with open(path, 'r') as f:
-        return yaml.safe_load(f)
-def stack_yamls(paths: list[str]) -> dict:
-    out = {}
-    for path in paths:
-        out.update(read_yaml(path))
-    return out
-    
+    os.chdir(old_work_dir) 
 def main():
-    arg_dict = read_yaml('config.yaml')
+    arg_dict = utils.read_yaml('config.yaml')
     train(arg_dict)
 
 if __name__ == "__main__":
