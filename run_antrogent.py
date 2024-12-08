@@ -45,7 +45,8 @@ def train(arg_dict: dict):
     trainer.train(args)
     os.chdir(old_work_dir) 
 def main():
-    arg_dict = utils.read_yaml('config.yaml')
+    yaml_list = ['config.yaml','directories.yaml','options.yaml','performance.yaml','hyperparameters.yaml']
+    arg_dict = utils.read_yamls(yaml_list)
     train(arg_dict)
 
 if __name__ == "__main__":
