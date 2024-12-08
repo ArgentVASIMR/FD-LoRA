@@ -20,7 +20,8 @@ renames = {
     'cap_dropout': 'caption_dropout_rate',
     'net_dropout': 'network_dropout',
     'scale_weight': 'scale_weight_norms',
-    'tag_dropout': 'caption_tag_dropout_rate'
+    'tag_dropout': 'caption_tag_dropout_rate',
+    'precision': 'mixed_precision'
 }
 constants = {
     "network_module": "networks.lora",
@@ -48,8 +49,6 @@ optimizer_args = ['weight_decay','d_coef']
     #old_lr_scale
     #save_amount
     #scale_steps
-    #scale_lr
-    #warmup steps (warmup, warmup_type)
     #unet_only (enum)
 greaters = ['cap_dropout', 'net_dropout', 'scale_weight', 'tag_dropout']
 
@@ -69,8 +68,7 @@ def optimizer_arg_mapping(config : dict):
     config['optimizer_args'] = list
 
 def other_mappings(config : dict):
-    config['mixed_precision'] = config.pop('precision')
-    config['save_precision'] = config['mixed_precision']
+    config['save_precision'] = config['precision']
     config['log_prefix'] = config['lora_name']
 
 def check_minimums(config : dict): # TODO add warnings
@@ -89,7 +87,25 @@ def check_minimums(config : dict): # TODO add warnings
     
     for k in greaters:
         if config[k] == 0: config.pop(k)
+def scale_lr(config : dict):
+    eff_batch_size = config['batch_size'] * config['grad_acc_step']
+    if config['scale_lr'] and eff_batch_size > 1:
+        config['unet_lr'] *= eff_batch_size ** 0.5
+        config['text_enc_lr'] *= eff_batch_size ** 0.5
 
+def warmup_steps(config : dict): #TODO warnings
+    if config['warmup'] == 0: return
+    #warmup types: percent, steps, steps_batch
+    #if warmup is percent, it is a float between 0 and 1. otherwise it is an int
+    if config['warmup_type'] == 'percent' or config['warmup_type'] == 'steps_batch':
+        config['warmup_steps'] = int(config['base_steps'] * config['warmup'])
+    elif config['warmup_type'] == 'steps':
+        config['warmup_steps'] = config['warmup']
+    else:
+        #TODO warn that this is not a valid warmup type
+        pass
+    config.pop('warmup')
+    config.pop('warmup_type')
 
 def preprocess_config(config : dict): 
     config.update(constants)
@@ -105,7 +121,8 @@ def preprocess_config(config : dict):
     if config['lora_weight'] == 'fp16': config['full_fp16'] = True
     if config['lora_weight'] == 'bf16': config['full_bf16'] = True
     
-
+    scale_lr(config)
+    warmup_steps(config)
 
     check_minimums(config)
     other_mappings(config)
