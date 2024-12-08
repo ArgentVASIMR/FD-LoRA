@@ -69,7 +69,6 @@
   is_lr_free     : false    
   pause_at_end   : true
   notify         : true
-  deactivate     : true
   precision      : "auto" # Options are "auto", "fp16", "bf16"
   class_2x_steps : true
   warmup_always  : false
