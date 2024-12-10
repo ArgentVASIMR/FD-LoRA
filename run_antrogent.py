@@ -19,7 +19,8 @@ def generate_flags(dict: dict) -> list[str]:
         if isinstance(v, str):
             if v == "": continue
         if isinstance(v, list):
-            out.append(f"--{k}={str(v)}")
+            out.append(f"--{k}")
+            [out.append(x) for x in v]
             continue
         out.append(f"--{k}={v}")
     return out
