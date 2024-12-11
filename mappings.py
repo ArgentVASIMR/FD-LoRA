@@ -73,6 +73,7 @@ def optimizer_arg_mapping(config : dict):
 def other_mappings(config : dict):
     config['save_precision'] = config['precision']
     config['log_prefix'] = config['lora_name']
+    config['max_bucket_reso'] = config['base_res']*2
 
 def check_minimums(config : dict): # TODO add warnings
     if config['base_res'] < 512 and config['sdxl'] == False: 
