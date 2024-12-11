@@ -102,6 +102,7 @@
         $max_grad_norm  = 1
         $correct_alpha  = $false # Apply scaling to alpha, multiplying by sqrt($net_dim)
         $loss_type      = "l2" # Options are "l2", "huber"
+        $maxed_buckets  = $true
 
         $extra = @() # Add args to here instead of editing the args at the bottom of this script
         $opt_args = @() # Add args to here instead of editing the args at the bottom of this script
@@ -351,6 +352,9 @@
     }
     if (($tag_dropout -gt 0) -and ($unet_only -eq (0 -or 1))){
         $extra += "--caption_tag_dropout_rate=$tag_dropout"
+    }
+    if ($maxed_buckets -eq $true){
+        $extra += "--max_bucket_reso=$($base_res*2)"
     }
 
 .\venv\scripts\activate
