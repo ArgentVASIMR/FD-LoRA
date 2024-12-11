@@ -66,7 +66,8 @@ def optimizer_arg_mapping(config : dict):
     list = []
     for k in optimizer_args:
         if k in config:
-            list.append(f"--{k}={config.pop(k)}")
+            if k == 'd_coef' and config['optimiser'] != 'prodigy': continue
+            list.append(f"{k}={config.pop(k)}")
     config['optimizer_args'] = list
 
 def other_mappings(config : dict):
