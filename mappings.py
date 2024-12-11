@@ -66,7 +66,9 @@ def optimizer_arg_mapping(config : dict):
     list = []
     for k in optimizer_args:
         if k in config:
-            if k == 'd_coef' and config['optimiser'] != 'prodigy': continue
+            if k == 'd_coef' and config['optimizer_type'] != 'prodigy': 
+                config.pop(k)
+                continue
             list.append(f"{k}={config.pop(k)}")
     config['optimizer_args'] = list
 
@@ -96,6 +98,10 @@ def scale_lr(config : dict):
     if config['scale_lr'] and eff_batch_size > 1:
         config['unet_lr'] *= eff_batch_size ** 0.5
         config['text_enc_lr'] *= eff_batch_size ** 0.5
+def scale_steps(config : dict):
+    eff_batch_size = config['batch_size'] * config['grad_acc_step']
+    if config['scale_steps'] and eff_batch_size > 1:
+        config['base_steps'] = int(config['base_steps'] / eff_batch_size)
 
 def warmup_steps(config : dict): #TODO warnings
     if config['warmup'] == 0: return
@@ -126,6 +132,7 @@ def preprocess_config(config : dict):
     if config['lora_weight'] == 'bf16': config['full_bf16'] = True
     
     scale_lr(config)
+    scale_steps(config)
     warmup_steps(config)
 
     check_minimums(config)
