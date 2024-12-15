@@ -4,9 +4,6 @@ import sys
 import yaml
 import utils
 
-import train_network as tn
-import sdxl_train_network as tn_sdxl
-import library.train_util as train_util
 
 def generate_flags(dict: dict) -> list[str]:
     out = []
@@ -26,6 +23,13 @@ def generate_flags(dict: dict) -> list[str]:
 def train(arg_dict: dict, sd_scripts_install: str):
     old_work_dir = os.getcwd()
     os.chdir(sd_scripts_install)
+
+    sys.path.append(sd_scripts_install)
+    
+    #if it's stupid and it works, then it's stupid
+    import train_network as tn
+    import sdxl_train_network as tn_sdxl
+    import library.train_util as train_util
     
     sdxl = arg_dict['sdxl']
 
