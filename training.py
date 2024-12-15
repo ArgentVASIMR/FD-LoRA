@@ -1,11 +1,10 @@
-import mappings
 import os
 import sys
 import yaml
 import utils
 from logger import Logger
 from validator import Validator
-
+from mappings import Mapper
 
 def generate_flags(dict: dict) -> list[str]:
     out = []
@@ -46,7 +45,7 @@ def train(arg_dict: dict, sd_scripts_install: str):
     validator =Validator(logger, arg_dict['config'], arg_dict['handle_errors'])
     validator.validate_all()
 
-    mapper = mappings.Mapper(arg_dict['config'])
+    mapper = Mapper(arg_dict['config'])
     mapper.preprocess_config()
 
     parser = lib.setup_parser()
