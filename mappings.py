@@ -47,11 +47,8 @@ optimizer_args = ['weight_decay','d_coef']
     #deactivate
     #notify
     #pause_at_end
-    #class_2x_steps
+    #verification python class
     #warmup_always
-    #old_lr_scale
-    #save_amount
-    #scale_steps
     #unet_only (enum)
 greaters = ['cap_dropout', 'net_dropout', 'scale_weight', 'tag_dropout']
 
