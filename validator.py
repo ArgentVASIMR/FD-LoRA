@@ -1,3 +1,9 @@
+def to_nearest_multiple(n, m, raise_to_min=False):
+    v = round(n / m) * m
+    if v == 0 and raise_to_min:
+        v = m
+    return v
+
 class Validator:
     def __init__(self, logger, config, handle_errors=False):
         self.logger = logger
@@ -18,10 +24,10 @@ class Validator:
     def validate_bucket_step(self):
         if self.config['bucket_step']%32 != 0 and self.config['sdxl'] == True:
             self.error_if_unhandled("Bucket step must be a multiple of 32 when using SDXL","Setting bucket step to nearest multiple of 32")
-            self.config['bucket_step'] = self.config['bucket_step'] - (self.config['bucket_step']%32)
-        if self.config['bucket_step']%8 != 0 and self.config['sdxl'] == False:
+            self.config['bucket_step'] = to_nearest_multiple(self.config['bucket_step'],32,raise_to_min=True)
+        elif self.config['bucket_step']%8 != 0:
             self.error_if_unhandled("Bucket step must be a multiple of 8 when using SD 1.5 models or similar","Setting bucket step to nearest multiple of 8")
-            self.config['bucket_step'] = self.config['bucket_step'] - (self.config['bucket_step']%8)
+            self.config['bucket_step'] = to_nearest_multiple(self.config['bucket_step'],8,raise_to_min=True)
         if self.config['bucket_step'] > self.config['base_res']:
             self.error_if_unhandled("Bucket step must be less than or equal to base resolution","Setting bucket step to base resolution")
             self.config['bucket_step'] = self.config['base_res']
