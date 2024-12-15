@@ -3,6 +3,8 @@ import os
 import sys
 import yaml
 import utils
+from logger import Logger
+from validator import Validator
 
 
 def generate_flags(dict: dict) -> list[str]:
@@ -39,8 +41,14 @@ def train(arg_dict: dict, sd_scripts_install: str):
     else: 
         lib = tn
         trainer = tn.NetworkTrainer()
+    logger = Logger(do_info=arg_dict['notify'],do_warn=arg_dict['warnings'])
+    
+    validator =Validator(logger, arg_dict['config'], arg_dict['handle_errors'])
+    validator.validate_all()
+
     mapper = mappings.Mapper(arg_dict['config'])
     mapper.preprocess_config()
+
     parser = lib.setup_parser()
     flags = generate_flags(arg_dict)
     args = parser.parse_args(flags)

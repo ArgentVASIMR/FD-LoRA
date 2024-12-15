@@ -58,10 +58,9 @@ def check_minimums(config : dict): # TODO add warnings
     for k in greaters:
         if config[k] == 0: config.pop(k)
 class Mapper:
-    def __init__(self,config : dict):
+    def __init__(self,logger: Logger,config : dict):
         self.config = config
-        self.logger = Logger(do_info=config['notify'],do_warn=config['warnings'])
-        self.validator = Validator(self.logger,config,config['handle_errors'])
+        self.logger = logger
     def rename_keys(self):
         config = self.config
         modified_list = []
@@ -150,7 +149,6 @@ class Mapper:
         if config['lora_weight'] == 'fp16': config['full_fp16'] = True
         if config['lora_weight'] == 'bf16': config['full_bf16'] = True
         
-        self.validator.validate_all()
 
         self.scale_lr()
         self.scale_steps(config)
