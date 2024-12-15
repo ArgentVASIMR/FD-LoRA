@@ -3,8 +3,6 @@ import os
 import sys
 import yaml
 import utils
-sd_scripts_install = 'D:\StableDiffusionProjects\sd-scripts' #TODO set this up as a command line argument or some other way so it isn't just a global
-sys.path.append(sd_scripts_install)
 
 import train_network as tn
 import sdxl_train_network as tn_sdxl
@@ -25,7 +23,7 @@ def generate_flags(dict: dict) -> list[str]:
         out.append(f"--{k}={v}")
     return out
 
-def train(arg_dict: dict):
+def train(arg_dict: dict, sd_scripts_install: str):
     old_work_dir = os.getcwd()
     os.chdir(sd_scripts_install)
     
@@ -45,10 +43,3 @@ def train(arg_dict: dict):
     print('training')
     trainer.train(args)
     os.chdir(old_work_dir) 
-def main():
-    yaml_list = ['config.yaml','directories.yaml','options.yaml','performance.yaml','hyperparameters.yaml']
-    arg_dict = utils.stack_yamls(yaml_list)
-    train(arg_dict)
-
-if __name__ == "__main__":
-    main()
