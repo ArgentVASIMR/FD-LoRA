@@ -5,8 +5,8 @@
   keep_tags     : 1
 
 # Steps
-  base_steps    : 2000
-  batch_size    : 1
+  base_steps    : 1500
+  batch_size    : 2
   grad_acc_step : 1
   scale_steps   : true
   warmup        : 0.1 # 0 to disable

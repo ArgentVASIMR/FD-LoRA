@@ -7,7 +7,7 @@
   log_dir         : logs
 
 # Base Model Config
-  base_model      : model.safetensors
+  base_model      : noobaiXLNAIXL_epsilonPred11Version.safetensors
   clip_skip       : 1
   v_prediction    : false
   sdxl            : true
