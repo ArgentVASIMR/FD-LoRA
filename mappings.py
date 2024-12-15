@@ -1,4 +1,5 @@
 from logger import Logger
+from validator import Validator
 renames = {
     "log_dir": "logging_dir",
     "keep_tags": "keep_tokens",
@@ -39,7 +40,7 @@ constants = {
 remove_key_list = ['sdxl','base_model','base_model_dir','version','lora_name',
                'scale_steps','scale_lr','save_amount','warnings','deactivate','notify','pause_at_end','class_2x_steps','warmup_always','old_lr_scale',
                'warmup','warmup_type','unet_only', 'lora_weight', 
-               'resume', 'old_version', 'resume_path']
+               'resume', 'old_version', 'resume_path','handle_errors']
 
 optimizer_args = ['weight_decay','d_coef']
 #TODO implement:
@@ -54,25 +55,13 @@ optimizer_args = ['weight_decay','d_coef']
 greaters = ['cap_dropout', 'net_dropout', 'scale_weight', 'tag_dropout']
 
 def check_minimums(config : dict): # TODO add warnings
-    if config['base_res'] < 512 and config['sdxl'] == False: 
-        config['base_res'] = 512
-    elif config['base_res'] < 1024 and config['sdxl'] == True:
-        config['base_res'] = 1024
-
-    if config['bucket_step']%32 != 0 and config['sdxl'] == True:
-        config['bucket_step'] = config['bucket_step'] - (config['bucket_step']%32)
-    elif config['bucket_step']%8 != 0 and config['sdxl'] == False:
-        config['bucket_step'] = config['bucket_step'] - (config['bucket_step']%8)
-
-    if config['bucket_step'] > config['base_res']:
-        config['bucket_step'] = config['base_res'] #you really need to warn about this one going forwards
-    
     for k in greaters:
         if config[k] == 0: config.pop(k)
-class mapper:
+class Mapper:
     def __init__(self,config : dict):
         self.config = config
         self.logger = Logger(do_info=config['notify'],do_warn=config['warnings'])
+        self.validator = Validator(self.logger,config,config['handle_errors'])
     def rename_keys(self):
         config = self.config
         modified_list = []
@@ -161,6 +150,8 @@ class mapper:
         if config['lora_weight'] == 'fp16': config['full_fp16'] = True
         if config['lora_weight'] == 'bf16': config['full_bf16'] = True
         
+        self.validator.validate_all()
+
         self.scale_lr()
         self.scale_steps(config)
         self.warmup_steps(config)

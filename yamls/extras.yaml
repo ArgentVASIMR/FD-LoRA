@@ -11,3 +11,4 @@
   precision      : "auto" # Options are "auto", "fp16", "bf16"
   class_2x_steps : true
   warmup_always  : false
+  handle_errors  : true

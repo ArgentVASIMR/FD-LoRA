@@ -39,7 +39,7 @@ def train(arg_dict: dict, sd_scripts_install: str):
     else: 
         lib = tn
         trainer = tn.NetworkTrainer()
-    mapper = mappings.mapper(arg_dict['config'])
+    mapper = mappings.Mapper(arg_dict['config'])
     mapper.preprocess_config()
     parser = lib.setup_parser()
     flags = generate_flags(arg_dict)
