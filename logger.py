@@ -29,4 +29,9 @@ class Logger:
             color_print(msg,bcolor.OKBLUE,newline)
     def error(self,msg):
         color_print(msg,bcolor.FAIL)
-        exit
+        exit()
+    def debug_list(self,msg:list):
+        if self.do_debug:
+            for i in msg:
+                color_print(i,bcolor.OKBLUE,newline=False)
+            print()
