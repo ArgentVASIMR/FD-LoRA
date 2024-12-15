@@ -1,3 +1,4 @@
+from logger import Logger
 renames = {
     "log_dir": "logging_dir",
     "keep_tags": "keep_tokens",
@@ -116,8 +117,13 @@ def warmup_steps(config : dict): #TODO warnings
         pass
     config.pop('warmup')
     config.pop('warmup_type')
+def save_config(config : dict):
+    if(config['save_amount'] > 0):
+        config['save_every_n_steps'] = int(config['base_steps'] / config['save_amount'])
+
 
 def preprocess_config(config : dict): 
+    logger = Logger(do_info=config['notify'],do_warn=config['warnings'])
     config.update(constants)
     #directories
     config['base_model_dir_full'] = config['base_model_dir'] + '\\' + config['base_model']
@@ -134,6 +140,7 @@ def preprocess_config(config : dict):
     scale_lr(config)
     scale_steps(config)
     warmup_steps(config)
+    save_config(config)
 
     check_minimums(config)
     other_mappings(config)
