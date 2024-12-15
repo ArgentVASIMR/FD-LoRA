@@ -50,30 +50,8 @@ optimizer_args = ['weight_decay','d_coef']
     #verification python class
     #warmup_always
     #unet_only (enum)
+    #lycoris/DoRA support
 greaters = ['cap_dropout', 'net_dropout', 'scale_weight', 'tag_dropout']
-
-
-def rename_keys(config : dict):
-    for k, v in renames.items():
-        if k in config:
-            config[v] = config.pop(k)
-def remove_keys(config : dict):
-    [config.pop(k) for k in remove_key_list if k in config]
-
-def optimizer_arg_mapping(config : dict):
-    list = []
-    for k in optimizer_args:
-        if k in config:
-            if k == 'd_coef' and config['optimizer_type'] != 'prodigy': 
-                config.pop(k)
-                continue
-            list.append(f"{k}={config.pop(k)}")
-    config['optimizer_args'] = list
-
-def other_mappings(config : dict):
-    config['save_precision'] = config['precision']
-    config['log_prefix'] = config['lora_name']
-    config['max_bucket_reso'] = config['base_res']*2
 
 def check_minimums(config : dict): # TODO add warnings
     if config['base_res'] < 512 and config['sdxl'] == False: 
@@ -91,58 +69,105 @@ def check_minimums(config : dict): # TODO add warnings
     
     for k in greaters:
         if config[k] == 0: config.pop(k)
-def scale_lr(config : dict):
-    eff_batch_size = config['batch_size'] * config['grad_acc_step']
-    if config['scale_lr'] and eff_batch_size > 1:
-        config['unet_lr'] *= eff_batch_size ** 0.5
-        config['text_enc_lr'] *= eff_batch_size ** 0.5
-def scale_steps(config : dict):
-    eff_batch_size = config['batch_size'] * config['grad_acc_step']
-    if config['scale_steps'] and eff_batch_size > 1:
-        config['base_steps'] = int(config['base_steps'] / eff_batch_size)
+class mapper:
+    def __init__(self,config : dict):
+        self.config = config
+        self.logger = Logger(do_info=config['notify'],do_warn=config['warnings'])
+    def rename_keys(self):
+        config = self.config
+        modified_list = []
+        for k, v in renames.items():
+            if k in config:
+                config[v] = config.pop(k)
+                modified_list.append(k)
+        self.logger.debug(f"Renamed {modified_list}")
+    def remove_keys(self):
+        [self.config.pop(k) for k in remove_key_list if k in self.config]
+        self.logger.debug(f"Removed {remove_key_list}")
+    def optimizer_arg_mapping(self):
+        config = self.config
+        lis = []
+        for k in optimizer_args:
+            if k in config:
+                val = config.pop(k)
+                if k == 'd_coef' and config['optimizer_type'] != 'prodigy': 
+                    continue
+                else:
+                    self.logger.info(f"prodigy detected, adding dcoef={val}")
+                lis.append(f"{k}={val}")
+        self.logger.debug(f"Added {lis} to optimizer_args")
+        config['optimizer_args'] = lis
+    def other_mappings(self):
+        config = self.config
+        config['save_precision'] = config['precision']
+        config['log_prefix'] = config['lora_name']
+        config['max_bucket_reso'] = config['base_res']*2
+    def scale_lr(self):
+        config = self.config
+        eff_batch_size = config['batch_size'] * config['grad_acc_step']
+        if config['scale_lr'] and eff_batch_size > 1:
+            old_unet_lr = config['unet_lr']
+            old_te_lr = config['text_enc_lr']
 
-def warmup_steps(config : dict): #TODO warnings
-    if config['warmup'] == 0: return
-    #warmup types: percent, steps, steps_batch
-    #if warmup is percent, it is a float between 0 and 1. otherwise it is an int
-    if config['warmup_type'] == 'percent' or config['warmup_type'] == 'steps_batch':
-        config['warmup_steps'] = int(config['base_steps'] * config['warmup'])
-    elif config['warmup_type'] == 'steps':
-        config['warmup_steps'] = config['warmup']
-    else:
-        #TODO warn that this is not a valid warmup type
-        pass
-    config.pop('warmup')
-    config.pop('warmup_type')
-def save_config(config : dict):
-    if(config['save_amount'] > 0):
-        config['save_every_n_steps'] = int(config['base_steps'] / config['save_amount'])
+            config['unet_lr'] *= eff_batch_size ** 0.5
+            config['text_enc_lr'] *= eff_batch_size ** 0.5
 
-
-def preprocess_config(config : dict): 
-    logger = Logger(do_info=config['notify'],do_warn=config['warnings'])
-    config.update(constants)
-    #directories
-    config['base_model_dir_full'] = config['base_model_dir'] + '\\' + config['base_model']
-    config['full_name'] = f"{config['lora_name']}_{config['version']}"
-    config['unique_output'] = config['output_dir'] + '\\' + config['full_name']
+            self.logger.info(f"scale_lr is set to true, learning rates have been adjusted to compensate:")
+            self.logger.info(f"Unet LR: {old_unet_lr} --> {config['unet_lr']}")
+            self.logger.info(f"Text Encoder LR: {old_te_lr} --> {config['text_enc_lr']}")
+    def scale_steps(self):
+        config = self.config
+        eff_batch_size = config['batch_size'] * config['grad_acc_step']
+        if config['scale_steps'] and eff_batch_size > 1:
+            old_steps = config['base_steps']
+            config['base_steps'] = int(config['base_steps'] / eff_batch_size)
+            self.logger.info(f"scale_steps is set to true and batch size is {eff_batch_size}, step count has been adjusted to compensate:")
+            self.logger.info(f"Step count: {old_steps} --> {config['base_steps']}")
     
-    #lora weight calculations
-    if config['precision'] == 'auto':
-        if config['lora_weight'] == 'fp32': config['precision'] = 'fp16'
-        else: config['precision'] = config['lora_weight']
-    if config['lora_weight'] == 'fp16': config['full_fp16'] = True
-    if config['lora_weight'] == 'bf16': config['full_bf16'] = True
+    def warmup_steps(self):
+        config = self.config
+        if config['warmup'] == 0: 
+            self.logger.info("Warmup is set to 0, skipping warmup steps")
+            return
+        #warmup types: percent, steps, steps_batch
+        #if warmup is percent, it is a float between 0 and 1. otherwise it is an int
+        if config['warmup_type'] == 'percent' or config['warmup_type'] == 'steps_batch':
+            config['warmup_steps'] = int(config['base_steps'] * config['warmup'])
+        elif config['warmup_type'] == 'steps':
+            config['warmup_steps'] = config['warmup']
+        else:
+            self.error(f"Invalid warmup type: {config['warmup_type']}, must be percent, steps, or steps_batch")
+        self.logger.info(f"Warmup steps: {config['warmup_steps']}")
+        config.pop('warmup')
+        config.pop('warmup_type')
     
-    scale_lr(config)
-    scale_steps(config)
-    warmup_steps(config)
-    save_config(config)
+    def save_config(self):
+        config = self.config
+        if(config['save_amount'] > 0):
+            config['save_every_n_steps'] = int(config['base_steps'] / config['save_amount'])
+            self.logger.info(f"save_every_n_steps set to {config['save_every_n_steps']}")
+    def preprocess_config(self): 
+        config = self.config
+        config.update(constants)
+        #directories
+        config['base_model_dir_full'] = config['base_model_dir'] + '\\' + config['base_model']
+        config['full_name'] = f"{config['lora_name']}_{config['version']}"
+        config['unique_output'] = config['output_dir'] + '\\' + config['full_name']
+        
+        #lora weight calculations
+        if config['precision'] == 'auto':
+            if config['lora_weight'] == 'fp32': config['precision'] = 'fp16'
+            else: config['precision'] = config['lora_weight']
+        if config['lora_weight'] == 'fp16': config['full_fp16'] = True
+        if config['lora_weight'] == 'bf16': config['full_bf16'] = True
+        
+        self.scale_lr()
+        self.scale_steps(config)
+        self.warmup_steps(config)
+        self.save_config(config)
 
-    check_minimums(config)
-    other_mappings(config)
-    rename_keys(config)
-    optimizer_arg_mapping(config)
-    remove_keys(config)
-
-    return config
+        check_minimums(config)
+        self.other_mappings(config)
+        self.rename_keys(config)
+        self.optimizer_arg_mapping(config)
+        self.remove_keys(config)
