@@ -42,10 +42,10 @@ def train(arg_dict: dict, sd_scripts_install: str):
         trainer = tn.NetworkTrainer()
     logger = Logger(do_info=arg_dict['notify'],do_warn=arg_dict['warnings'])
     
-    validator =Validator(logger, arg_dict['config'], arg_dict['handle_errors'])
+    validator =Validator(logger, arg_dict, arg_dict['handle_errors'])
     validator.validate_all()
 
-    mapper = Mapper(arg_dict['config'])
+    mapper = Mapper(logger,arg_dict)
     mapper.preprocess_config()
 
     parser = lib.setup_parser()
