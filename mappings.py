@@ -139,9 +139,9 @@ class Mapper:
         config = self.config
         config.update(constants)
         #directories
-        config['base_model_dir_full'] = config['base_model_dir'] + '\\' + config['base_model']
+        config['base_model_dir_full'] = config['base_model_dir'] + '/' + config['base_model']
         config['full_name'] = f"{config['lora_name']}_{config['version']}"
-        config['unique_output'] = config['output_dir'] + '\\' + config['full_name']
+        config['unique_output'] = config['output_dir'] + '/' + config['full_name']
         
         #lora weight calculations
         if config['precision'] == 'auto':
