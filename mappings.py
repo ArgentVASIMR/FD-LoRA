@@ -1,6 +1,7 @@
 from logger import Logger
 from validator import Validator
 renames = {
+    "net_module": "network_module",
     "log_dir": "logging_dir",
     "keep_tags": "keep_tokens",
     "dataset_dir": "train_data_dir",
@@ -151,12 +152,12 @@ class Mapper:
         
 
         self.scale_lr()
-        self.scale_steps(config)
-        self.warmup_steps(config)
-        self.save_config(config)
+        self.scale_steps()
+        self.warmup_steps()
+        self.save_config()
 
         check_minimums(config)
-        self.other_mappings(config)
-        self.rename_keys(config)
-        self.optimizer_arg_mapping(config)
-        self.remove_keys(config)
+        self.other_mappings()
+        self.rename_keys()
+        self.optimizer_arg_mapping()
+        self.remove_keys()
