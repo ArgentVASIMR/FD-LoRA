@@ -47,11 +47,10 @@ def train(arg_dict: dict, sd_scripts_install: str):
 
     mapper = Mapper(logger,arg_dict)
     mapper.preprocess_config()
-
     parser = lib.setup_parser()
     flags = generate_flags(arg_dict)
     args = parser.parse_args(flags)
     train_util.verify_command_line_training_args(args)
-    print('training')
+    print("\n-- Beginning training --")
     trainer.train(args)
     os.chdir(old_work_dir) 
