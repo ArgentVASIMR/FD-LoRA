@@ -42,7 +42,6 @@ remove_key_list = ['sdxl','base_model','base_model_dir','version','lora_name',
                'warmup','warmup_type','unet_only', 'lora_weight', 
                'resume', 'old_version', 'resume_path','handle_errors']
 
-optimizer_args = ['weight_decay','d_coef']
 #TODO implement:
     #warnings
     #deactivate
@@ -75,14 +74,12 @@ class Mapper:
     def optimizer_arg_mapping(self):
         config = self.config
         lis = []
-        for k in optimizer_args:
-            if k in config:
-                val = config.pop(k)
-                if k == 'd_coef':
-                    if config['optimizer_type'] == 'prodigy': 
-                        self.logger.info(f"prodigy detected, adding dcoef={val}")
-                    else: continue
-                lis.append(f"{k}={val}")
+        for k, val in config['optimizer_args'].items():
+            if k == 'd_coef':
+                if config['optimizer_type'] == 'prodigy': 
+                    self.logger.info(f"prodigy detected, adding dcoef={val}")
+                else: continue
+            lis.append(f"{k}={val}")
         self.logger.debug(f"Added {lis} to optimizer_args")
         config['optimizer_args'] = lis
     def other_mappings(self):

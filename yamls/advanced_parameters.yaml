@@ -1,12 +1,14 @@
 # Advanced
-  weight_decay   : 0.01
   cap_dropout    : 0.0
   net_dropout    : 0.1
   tag_dropout    : 0.0
   scale_weight   : 0
-  d_coef         : 1.0
   noise_offset   : 0.0375
   min_snr_gamma  : 1
   max_grad_norm  : 1
   correct_alpha  : false # Apply scaling to alpha, multiplying by sqrt(net_dim)
   network_module : "networks.lora"
+
+  optimizer_args:
+    weight_decay: 0.01
+    d_coef: 1.0
