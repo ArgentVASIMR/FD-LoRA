@@ -81,7 +81,7 @@ class Mapper:
                 val = config.pop(k)
                 if k == 'd_coef' and config['optimizer_type'] != 'prodigy': 
                     continue
-                else:
+                elif config['optimizer_type'] == 'prodigy':
                     self.logger.info(f"prodigy detected, adding dcoef={val}")
                 lis.append(f"{k}={val}")
         self.logger.debug(f"Added {lis} to optimizer_args")
@@ -156,7 +156,7 @@ class Mapper:
         self.warmup_steps()
         self.save_config()
 
-        check_minimums(config)
+        check_minimums(config) #TODO make this into a class method
         self.other_mappings()
         self.rename_keys()
         self.optimizer_arg_mapping()
