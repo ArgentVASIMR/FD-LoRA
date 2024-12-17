@@ -2,7 +2,6 @@ from logger import Logger
 from validator import Validator
 import os
 renames = {
-    "net_module": "network_module",
     "log_dir": "logging_dir",
     "keep_tags": "keep_tokens",
     "dataset_dir": "train_data_dir",

@@ -86,3 +86,4 @@
   min_snr_gamma  : 1
   max_grad_norm  : 1
   correct_alpha  : false # Apply scaling to alpha, multiplying by sqrt(net_dim)
+  network_module : "networks.lora"
