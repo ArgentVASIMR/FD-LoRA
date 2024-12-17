@@ -1,24 +1,24 @@
 # Dataset Treatment
   base_res      : 1024
-  bucket_step   : 64
+  bucket_reso_steps   : 64
   flip_aug      : true
   keep_tags     : 1
 
 # Steps
   base_steps    : 1500
-  batch_size    : 2
-  grad_acc_step : 1
+  train_batch_size    : 2
+  gradient_accumulation_steps : 1
   scale_steps   : true
   warmup        : 0.1 # 0 to disable
   warmup_type   : percent # Options are "percent", "steps", "steps_batch"
 
 # Learning Rates
   unet_lr       : 1.0e-4
-  text_enc_lr   : 2.0e-5
+  text_encoder_lr   : 2.0e-5
   scale_lr      : true
   lr_scheduler  : cosine # Options are "cosine", "linear", "constant", "constant_with_warmup".
   
 # Network
-  net_dim       : 16
-  net_alpha     : 16
-  optimiser     : adamw # Options are "adamw", "adamw8bit", "dadaptadam".
+  network_dim       : 16
+  network_alpha     : 16
+  optimizer_type     : adamw # Options are "adamw", "adamw8bit", "dadaptadam".

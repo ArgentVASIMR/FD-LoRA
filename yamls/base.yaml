@@ -10,7 +10,7 @@
   class_dir       : D:\StableDiffusionProjects\ClassImg
   base_model_dir  : C:\Users\antro\Documents\Matrix\Models\StableDiffusion
   prompts         : "" # Leave blank if you don't want sample images
-  log_dir         : logs
+  logging_dir         : logs
 
 #base_model_config
   base_model      : model.safetensors
@@ -30,31 +30,31 @@
 
 #dataset
   base_res      : 1024
-  bucket_step   : 64
+  bucket_reso_steps   : 64
   flip_aug      : true
   keep_tags     : 1
 
 #step_settings
   base_steps    : 2000
-  batch_size    : 1
-  grad_acc_step : 1
+  train_batch_size    : 1
+  gradient_accumulation_steps : 1
   scale_steps   : true
   warmup        : 0.1 # 0 to disable
   warmup_type   : percent # Options are "percent", "steps", "steps_batch"
 
 #learning_rate
   unet_lr       : 1.0e-4
-  text_enc_lr   : 2.0e-5
+  text_encoder_lr   : 2.0e-5
   scale_lr      : true
   lr_scheduler  : cosine # Options are "cosine", "linear", "constant", "constant_with_warmup".
   
 #network
-  net_dim       : 16
-  net_alpha     : 16
-  optimiser     : adamw # Options are "adamw", "adamw8bit", "dadaptadam".
+  network_dim       : 16
+  network_alpha     : 16
+  optimizer_type     : adamw # Options are "adamw", "adamw8bit", "dadaptadam".
 
 #performance
-  grad_checkpt  : true
+  gradient_checkpointing  : true
   lora_weight   : fp16 # Options are "fp32", "fp16", "bf16"
   fp8_base      : true
   unet_only     : 0 # 0 is off, 1 is partial, 2 is fully
@@ -76,14 +76,14 @@
 
 #advanced:
 # (MAY BE REMOVED FROM CONFIG IN FUTURE IF NO ADDITIONAL CHANGES ARE RECOMMENDED)
-  cap_dropout    : 0.0
-  net_dropout    : 0.1
+  caption_dropout_rate    : 0.0
+  network_dropout    : 0.1
   tag_dropout    : 0.0
-  scale_weight   : 0
+  scale_weight_norms   : 0
   noise_offset   : 0.0375
   min_snr_gamma  : 1
   max_grad_norm  : 1
-  correct_alpha  : false # Apply scaling to alpha, multiplying by sqrt(net_dim)
+  correct_alpha  : false # Apply scaling to alpha, multiplying by sqrt(network_dim)
   network_module : "networks.lora"
 
   optimizer_args:

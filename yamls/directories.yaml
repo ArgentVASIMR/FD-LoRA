@@ -4,7 +4,7 @@
   class_dir       : D:\StableDiffusionProjects\ClassImg
   base_model_dir  : C:\Users\antro\Documents\Matrix\Models\StableDiffusion
   prompts         : "" # Leave blank if you don't want sample images
-  log_dir         : logs
+  logging_dir         : logs
 
 # Base Model Config
   base_model      : noobaiXLNAIXL_epsilonPred11Version.safetensors

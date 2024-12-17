@@ -1,31 +1,14 @@
 from logger import Logger
 from validator import Validator
 import os
-renames = {
-    "log_dir": "logging_dir",
+renames={
     "keep_tags": "keep_tokens",
+    "class_dir": "reg_data_dir", #TODO see if this is actually correct nomenclature
     "dataset_dir": "train_data_dir",
-    "unique_output": "output_dir",
-    "class_dir": "reg_data_dir",
-    "base_model_dir_full": "pretrained_model_name_or_path",
-    "full_name": "output_name",
-    'text_enc_lr': 'text_encoder_lr',
-    'base_res': 'resolution',
-    'bucket_step': 'bucket_reso_steps',
-    'batch_size': 'train_batch_size',
-    'grad_acc_step': 'gradient_accumulation_steps',
-    'optimiser': 'optimizer_type',
-    'net_dim': 'network_dim',
-    'net_alpha': 'network_alpha',
-    'base_steps': 'max_train_steps',
-    'opt_args': 'optimizer_args',
-    'grad_checkpt': 'gradient_checkpointing',
-    'cap_dropout': 'caption_dropout_rate',
-    'net_dropout': 'network_dropout',
-    'scale_weight': 'scale_weight_norms',
-    'tag_dropout': 'caption_tag_dropout_rate',
-    'precision': 'mixed_precision',
-    'warmup_steps': 'lr_warmup_steps'
+    "base_steps": "max_train_steps",
+    "tag_dropout": "caption_tag_dropout_rate",
+    "precision": "mixed_precision",
+    "base_res": "resolution",
 }
 constants = {
     "max_data_loader_n_workers": 1,
@@ -51,7 +34,7 @@ remove_key_list = ['sdxl','base_model','base_model_dir','version','lora_name',
     #warmup_always
     #unet_only (enum)
     #lycoris/DoRA support
-greaters = ['cap_dropout', 'net_dropout', 'scale_weight', 'tag_dropout']
+greaters = ['caption_dropout_rate', 'network_dropout', 'scale_weight_norms', 'tag_dropout']
 
 def check_minimums(config : dict): # TODO add warnings
     for k in greaters:
@@ -89,20 +72,20 @@ class Mapper:
         config['max_bucket_reso'] = config['base_res']*2
     def scale_lr(self):
         config = self.config
-        eff_batch_size = config['batch_size'] * config['grad_acc_step']
+        eff_batch_size = config['train_batch_size'] * config['gradient_accumulation_steps']
         if config['scale_lr'] and eff_batch_size > 1:
             old_unet_lr = config['unet_lr']
-            old_te_lr = config['text_enc_lr']
+            old_te_lr = config['text_encoder_lr']
 
             config['unet_lr'] *= eff_batch_size ** 0.5
-            config['text_enc_lr'] *= eff_batch_size ** 0.5
+            config['text_encoder_lr'] *= eff_batch_size ** 0.5
 
             self.logger.info(f"scale_lr is set to true, learning rates have been adjusted to compensate:")
             self.logger.info(f"Unet LR: {old_unet_lr} --> {config['unet_lr']}")
-            self.logger.info(f"Text Encoder LR: {old_te_lr} --> {config['text_enc_lr']}")
+            self.logger.info(f"Text Encoder LR: {old_te_lr} --> {config['text_encoder_lr']}")
     def scale_steps(self):
         config = self.config
-        eff_batch_size = config['batch_size'] * config['grad_acc_step']
+        eff_batch_size = config['train_batch_size'] * config['gradient_accumulation_steps']
         if config['scale_steps'] and eff_batch_size > 1:
             old_steps = config['base_steps']
             config['base_steps'] = int(config['base_steps'] / eff_batch_size)
@@ -117,12 +100,12 @@ class Mapper:
         #warmup types: percent, steps, steps_batch
         #if warmup is percent, it is a float between 0 and 1. otherwise it is an int
         if config['warmup_type'] == 'percent' or config['warmup_type'] == 'steps_batch':
-            config['warmup_steps'] = int(config['base_steps'] * config['warmup'])
+            config['lr_warmup_steps'] = int(config['base_steps'] * config['warmup'])
         elif config['warmup_type'] == 'steps':
-            config['warmup_steps'] = config['warmup']
+            config['lr_warmup_steps'] = config['warmup']
         else:
             self.error(f"Invalid warmup type: {config['warmup_type']}, must be percent, steps, or steps_batch")
-        self.logger.info(f"Warmup steps: {config['warmup_steps']}")
+        self.logger.info(f"Warmup steps: {config['lr_warmup_steps']}")
         config.pop('warmup')
         config.pop('warmup_type')
     
@@ -135,9 +118,9 @@ class Mapper:
         config = self.config
         config.update(constants)
         #directories
-        config['base_model_dir_full'] = os.path.join(config['base_model_dir'], config['base_model'])
-        config['full_name'] = f"{config['lora_name']}_{config['version']}"
-        config['unique_output'] = os.path.join(config['output_dir'], config['full_name'])
+        config['pretrained_model_name_or_path'] = os.path.join(config['base_model_dir'], config['base_model'])
+        name = f"{config['lora_name']}_{config['version']}"
+        config['output_name'] = os.path.join(config['output_dir'], name)
         
         #lora weight calculations
         if config['precision'] == 'auto':
