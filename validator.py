@@ -15,6 +15,7 @@ class Validator:
         else:
             self.logger.warn(f"{error_message} -> {fix_message}")
     def validate_resolution(self):
+        #TODO: warn instead of error for undersized resolutions
         if self.config['base_res'] < 512:
             self.error_if_unhandled("Base resolution must be at least 512","Setting base resolution to 512")
             self.config['base_res'] = 512
