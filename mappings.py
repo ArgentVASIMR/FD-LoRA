@@ -1,5 +1,6 @@
 from logger import Logger
 from validator import Validator
+import os
 renames = {
     "net_module": "network_module",
     "log_dir": "logging_dir",
@@ -139,9 +140,9 @@ class Mapper:
         config = self.config
         config.update(constants)
         #directories
-        config['base_model_dir_full'] = config['base_model_dir'] + '/' + config['base_model']
+        config['base_model_dir_full'] = os.path.join(config['base_model_dir'], config['base_model'])
         config['full_name'] = f"{config['lora_name']}_{config['version']}"
-        config['unique_output'] = config['output_dir'] + '/' + config['full_name']
+        config['unique_output'] = os.path.join(config['output_dir'], config['full_name'])
         
         #lora weight calculations
         if config['precision'] == 'auto':
