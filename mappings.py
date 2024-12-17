@@ -28,7 +28,6 @@ renames = {
     'warmup_steps': 'lr_warmup_steps'
 }
 constants = {
-    "network_module": "networks.lora",
     "max_data_loader_n_workers": 1,
     "persistent_data_loader_workers": True,
     "caption_extension": ".txt",
